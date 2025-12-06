@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================
+// 用户模型
+// =============================================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // bcrypt加密后的密码
+  name      String?
+  avatar    String?
+  country   String?  // 用户国家/地区代码 (ISO 3166-1 alpha-2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 关联关系
+  accounts  Account[]
+  records   Record[]
+  budgets   Budget[]
+  categories Category[]
+
+  @@map("users")
+}
+
+// =============================================
+// 账户模型
+// =============================================
+model Account {
+  id        String      @id @default(uuid())
+  name      String      // 账户名称,例如:招商银行、支付宝
+  type      String      // 账户类型: BANK, INVESTMENT, CASH, CREDIT_CARD
+  balance   Float     @default(0) // 当前余额
+  currency  String      @default("CNY")
+  userId    String      @map("user_id")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  // 关联关系
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records Record[]
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+// 账户类型常量 (SQLite不支持enum,使用String)
+// BANK = 银行卡
+// INVESTMENT = 投资账户
+// CASH = 现金
+// CREDIT_CARD = 信用卡
+
+// =============================================
+// 记账记录模型
+// =============================================
+model Record {
+  id          String     @id @default(uuid())
+  amount      Float    // 金额
+  type        String     // 记账类型: EXPENSE, INCOME, TRANSFER
+  category    String     // 分类名称
+  description String?    // 备注
+  rawText     String?    @map("raw_text") // AI语音原始文本
+  date        DateTime   @default(now()) // 记账日期
+  accountId   String     @map("account_id")
+  userId      String     @map("user_id")
+  isConfirmed Boolean    @default(true) @map("is_confirmed") // 是否已确认(AI记账需要)
+  confidence  Float?     // AI解析置信度
+  aiRawResponse String?  @map("ai_raw_response") // AI原始响应,用于调试
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  // 关联关系
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([accountId])
+  @@index([category])
+  @@map("records")
+}
+
+// 记账类型常量 (SQLite不支持enum,使用String)
+// EXPENSE = 支出
+// INCOME = 收入
+// TRANSFER = 转账
+
+// =============================================
+// 分类模型
+// =============================================
+model Category {
+  id        String     @id @default(uuid())
+  name      String     // 分类名称
+  icon      String     // emoji或图标名
+  type      String     // 支出/收入: EXPENSE, INCOME
+  parentId  String?    @map("parent_id") // 父分类ID,支持二级分类
+  userId    String?    @map("user_id") // null表示系统预设分类
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  // 关联关系
+  user   User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent Category? @relation("CategoryChildren", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryChildren")
+
+  @@index([userId])
+  @@index([type])
+  @@map("categories")
+}
+
+// =============================================
+// 预算模型
+// =============================================
+model Budget {
+  id        String   @id @default(uuid())
+  month     String   // 格式: YYYY-MM
+  category  String?  // 分类名称,null表示总预算
+  amount    Float  // 预算金额
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 关联关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, category])
+  @@index([userId, month])
+  @@map("budgets")
+}
+
+// =============================================
+// 投资持仓模型 (阶段三功能)
+// =============================================
+model Investment {
+  id            String   @id @default(uuid())
+  name          String   // 投资标的名称,如:茅台股票、比特币
+  type          String   // STOCK, FUND, CRYPTO
+  code          String?  // 股票代码/基金代码
+  costPrice     Float  @map("cost_price") // 成本价
+  currentPrice  Float? @map("current_price") // 当前价格
+  quantity      Float  // 持仓数量
+  userId        String   @map("user_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("investments")
+}
+
+// =============================================
+// AI 审计日志模型
+// =============================================
+model AIAuditLog {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  userRegion   String?  @map("user_region") // 用户区域: CN, US, EU, etc.
+  provider     String   // AI Provider: Gemini, OpenAI, Qwen
+  status       String   // SUCCESS, FAILURE
+  durationMs   Int      @map("duration_ms") // 请求耗时(ms)
+  errorMessage String?  @map("error_message") // 错误信息
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([provider, createdAt])
+  @@map("ai_audit_logs")
+}
+
+// =============================================
+// 定时任务模型 (支持工资、定期存款、订阅等场景)
+// =============================================
+model ScheduledTask {
+  id          String   @id @default(uuid())
+  name        String   // 任务名称,如: 工资、房租、Netflix订阅
+  type        String   // INCOME 收入, EXPENSE 支出, TRANSFER 转账
+  amount      Float    // 金额
+  category    String   // 分类
+  accountId   String   @map("account_id") // 关联账户
+  userId      String   @map("user_id")
+  
+  // 调度配置
+  frequency   String   // DAILY, WEEKLY, MONTHLY, YEARLY
+  dayOfMonth  Int?     @map("day_of_month")  // 每月几号 (1-31)
+  dayOfWeek   Int?     @map("day_of_week")   // 每周几 (0-6, 0=周日)
+  monthOfYear Int?     @map("month_of_year") // 每年几月 (1-12)
+  executeTime String   @default("09:00") @map("execute_time") // 执行时间 HH:mm
+  
+  // 有效期
+  startDate   DateTime @map("start_date") // 开始日期
+  endDate     DateTime? @map("end_date")  // 结束日期 (可选)
+  
+  // 状态
+  isEnabled   Boolean  @default(true) @map("is_enabled")   // 是否启用
+  lastRunAt   DateTime? @map("last_run_at") // 上次执行时间
+  nextRunAt   DateTime? @map("next_run_at") // 下次执行时间
+  runCount    Int      @default(0) @map("run_count") // 已执行次数
+  
+  description String?  // 备注
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([userId])
+  @@index([nextRunAt, isEnabled])
+  @@map("scheduled_tasks")
+}
+
+// 定时任务执行日志
+model ScheduledTaskLog {
+  id        String   @id @default(uuid())
+  taskId    String   @map("task_id")
+  recordId  String?  @map("record_id") // 生成的记账记录ID
+  status    String   // SUCCESS, FAILED
+  message   String?  // 执行消息/错误信息
+  executedAt DateTime @default(now()) @map("executed_at")
+  
+  @@index([taskId])
+  @@map("scheduled_task_logs")
+}

@@ -1,0 +1,270 @@
+{"context":"NestFactory","level":"info","message":"Starting Nest application...","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"PrismaModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"LoggerModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"PassportModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"ConfigHostModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"ConfigModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"AiModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"AppModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"JwtModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"AccountsModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"RecordsModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"InstanceLoader","level":"info","message":"AuthModule dependencies initialized","timestamp":"2025-12-05 20:40:49"}
+{"context":"RoutesResolver","level":"info","message":"AppController {/api}:","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RoutesResolver","level":"info","message":"AuthController {/api/auth}:","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/register, POST} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/login, POST} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/me, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RoutesResolver","level":"info","message":"AccountsController {/api/accounts}:","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, POST} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/total, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, PATCH} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, DELETE} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RoutesResolver","level":"info","message":"RecordsController {/api/records}:","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, POST} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/voice, POST} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/statistics, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, GET} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, PATCH} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, DELETE} route","timestamp":"2025-12-05 20:40:49"}
+{"context":"NestApplication","level":"info","message":"Nest application successfully started","timestamp":"2025-12-05 20:40:49"}
+{"context":"Bootstrap","level":"info","message":"\n🚀 PandaCoin API running on: http://localhost:3000/api","timestamp":"2025-12-05 20:40:49"}
+{"context":"Bootstrap","level":"info","message":"📊 Environment: development","timestamp":"2025-12-05 20:40:49"}
+{"context":"Bootstrap","level":"info","message":"📝 Log Level: debug\n","timestamp":"2025-12-05 20:40:49"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/login","timestamp":"2025-12-05 20:42:33"}
+{"context":"HTTP","level":"debug","message":"Body: {\"email\":\"test@pandacoin.com\",\"password\":\"***\"}","timestamp":"2025-12-05 20:42:33"}
+{"context":"HTTP","level":"debug","message":"📤 Response: POST /api/auth/login - 201 (74ms)","timestamp":"2025-12-05 20:42:33"}
+{"context":"NestFactory","level":"info","message":"Starting Nest application...","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"PrismaModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"LoggerModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"PassportModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"ConfigHostModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"ConfigModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"AiModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"AppModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"JwtModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"AccountsModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"RecordsModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"InstanceLoader","level":"info","message":"AuthModule dependencies initialized","timestamp":"2025-12-05 20:43:20"}
+{"context":"RoutesResolver","level":"info","message":"AppController {/api}:","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RoutesResolver","level":"info","message":"AuthController {/api/auth}:","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/register, POST} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/login, POST} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/me, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RoutesResolver","level":"info","message":"AccountsController {/api/accounts}:","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, POST} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/total, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, PATCH} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, DELETE} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RoutesResolver","level":"info","message":"RecordsController {/api/records}:","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, POST} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/voice, POST} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/statistics, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, GET} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, PATCH} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, DELETE} route","timestamp":"2025-12-05 20:43:20"}
+{"context":"NestApplication","level":"info","message":"Nest application successfully started","timestamp":"2025-12-05 20:43:20"}
+{"context":"Bootstrap","level":"info","message":"\n🚀 PandaCoin API running on: http://localhost:3000/api","timestamp":"2025-12-05 20:43:20"}
+{"context":"Bootstrap","level":"info","message":"📊 Environment: development","timestamp":"2025-12-05 20:43:20"}
+{"context":"Bootstrap","level":"info","message":"📝 Log Level: debug\n","timestamp":"2025-12-05 20:43:20"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/login","timestamp":"2025-12-05 20:44:17"}
+{"context":"HTTP","level":"debug","message":"Body: {\"email\":\"wrong@test.com\",\"password\":\"***\"}","timestamp":"2025-12-05 20:44:17"}
+{"context":"HTTP","level":"error","message":"❌ Error Response: POST /api/auth/login - 401 (15ms)","timestamp":"2025-12-05 20:44:17","trace":"UnauthorizedException: 邮箱或密码错误\n    at AuthService.login (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/src/auth/auth.service.ts:61:13)\n    at async AuthController.login (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/src/auth/auth.controller.ts:21:20)"}
+{"level":"error","message":"HTTP异常: POST /api/auth/login","timestamp":"2025-12-05 20:44:17","trace":"UnauthorizedException: 邮箱或密码错误\n    at AuthService.login (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/src/auth/auth.service.ts:61:13)\n    at async AuthController.login (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/src/auth/auth.controller.ts:21:20)"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/register","timestamp":"2025-12-05 20:44:56"}
+{"context":"HTTP","level":"debug","message":"Body: {\"email\":\"invalid-email\",\"password\":\"***\"}","timestamp":"2025-12-05 20:44:56"}
+{"context":"HTTP","level":"error","message":"❌ Error Response: POST /api/auth/register - 400 (4ms)","timestamp":"2025-12-05 20:44:56","trace":"BadRequestException: Bad Request Exception\n    at ValidationPipe.exceptionFactory (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/common/pipes/validation.pipe.js:107:20)\n    at ValidationPipe.transform (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/common/pipes/validation.pipe.js:74:30)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async resolveParamValue (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/core/router/router-execution-context.js:148:23)\n    at async Promise.all (index 0)\n    at async pipesFn (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/core/router/router-execution-context.js:151:13)\n    at async /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/core/router/router-execution-context.js:37:30"}
+{"level":"error","message":"HTTP异常: POST /api/auth/register","timestamp":"2025-12-05 20:44:56","trace":"BadRequestException: Bad Request Exception\n    at ValidationPipe.exceptionFactory (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/common/pipes/validation.pipe.js:107:20)\n    at ValidationPipe.transform (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/common/pipes/validation.pipe.js:74:30)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async resolveParamValue (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/core/router/router-execution-context.js:148:23)\n    at async Promise.all (index 0)\n    at async pipesFn (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/core/router/router-execution-context.js:151:13)\n    at async /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/core/router/router-execution-context.js:37:30"}
+{"context":"NestFactory","level":"info","message":"Starting Nest application...","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"PrismaModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"LoggerModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"PassportModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"ConfigHostModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"ConfigModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"AiModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"AppModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"JwtModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"AccountsModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"RecordsModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"InstanceLoader","level":"info","message":"AuthModule dependencies initialized","timestamp":"2025-12-05 20:45:39"}
+{"context":"RoutesResolver","level":"info","message":"AppController {/api}:","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RoutesResolver","level":"info","message":"AuthController {/api/auth}:","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/register, POST} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/login, POST} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/me, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RoutesResolver","level":"info","message":"AccountsController {/api/accounts}:","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, POST} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/total, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, PATCH} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, DELETE} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RoutesResolver","level":"info","message":"RecordsController {/api/records}:","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, POST} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/voice, POST} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/statistics, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, GET} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, PATCH} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, DELETE} route","timestamp":"2025-12-05 20:45:39"}
+{"context":"NestApplication","level":"info","message":"Nest application successfully started","timestamp":"2025-12-05 20:45:39"}
+{"context":"Bootstrap","level":"info","message":"\n🚀 PandaCoin API running on: http://localhost:3000/api","timestamp":"2025-12-05 20:45:39"}
+{"context":"Bootstrap","level":"info","message":"📊 Environment: development","timestamp":"2025-12-05 20:45:39"}
+{"context":"Bootstrap","level":"info","message":"📝 Log Level: debug\n","timestamp":"2025-12-05 20:45:39"}
+{"context":"NestFactory","level":"info","message":"Starting Nest application...","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"PrismaModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"LoggerModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"PassportModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"ConfigHostModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"ConfigModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"AiModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"AppModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"JwtModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"AccountsModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"RecordsModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"InstanceLoader","level":"info","message":"AuthModule dependencies initialized","timestamp":"2025-12-05 20:46:00"}
+{"context":"RoutesResolver","level":"info","message":"AppController {/api}:","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RoutesResolver","level":"info","message":"AuthController {/api/auth}:","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/register, POST} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/login, POST} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/me, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RoutesResolver","level":"info","message":"AccountsController {/api/accounts}:","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, POST} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/total, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, PATCH} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, DELETE} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RoutesResolver","level":"info","message":"RecordsController {/api/records}:","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, POST} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/voice, POST} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/statistics, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, GET} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, PATCH} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, DELETE} route","timestamp":"2025-12-05 20:46:00"}
+{"context":"NestApplication","level":"info","message":"Nest application successfully started","timestamp":"2025-12-05 20:46:00"}
+{"context":"Bootstrap","level":"info","message":"\n🚀 PandaCoin API running on: http://localhost:3000/api","timestamp":"2025-12-05 20:46:00"}
+{"context":"Bootstrap","level":"info","message":"📊 Environment: development","timestamp":"2025-12-05 20:46:00"}
+{"context":"Bootstrap","level":"info","message":"📝 Log Level: debug\n","timestamp":"2025-12-05 20:46:00"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-05 20:46:26"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (2ms)","timestamp":"2025-12-05 20:46:26"}
+{"ip":"::1","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T12:46:26.179Z","url":"/api/accounts","userAgent":"curl/8.7.1","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"level":"error","message":"HTTP异常: GET /api/auth/me","timestamp":"2025-12-05 20:57:52","trace":"UnauthorizedException: Unauthorized\n    at JwtAuthGuard.handleRequest (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:60:30)\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:44:124\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:83:24\n    at allFailed (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:110:18)\n    at attempt (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:183:28)\n    at strategy.fail (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:314:9)\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport-jwt/lib/strategy.js:106:33\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/jsonwebtoken/verify.js:190:16\n    at getSecret (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/jsonwebtoken/verify.js:97:14)\n    at module.exports [as verify] (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/jsonwebtoken/verify.js:101:10)"}
+{"level":"error","message":"HTTP异常: GET /api/accounts","timestamp":"2025-12-05 20:57:52","trace":"UnauthorizedException: Unauthorized\n    at JwtAuthGuard.handleRequest (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:60:30)\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:44:124\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:83:24\n    at allFailed (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:110:18)\n    at attempt (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:183:28)\n    at strategy.fail (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:314:9)\n    at JwtStrategy.authenticate (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport-jwt/lib/strategy.js:96:21)\n    at attempt (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:378:16)\n    at authenticate (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:379:7)\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:88:3"}
+{"level":"error","message":"HTTP异常: GET /api/records","timestamp":"2025-12-05 20:57:52","trace":"UnauthorizedException: Unauthorized\n    at JwtAuthGuard.handleRequest (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:60:30)\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:44:124\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:83:24\n    at allFailed (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:110:18)\n    at attempt (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:183:28)\n    at strategy.fail (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:314:9)\n    at JwtStrategy.authenticate (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport-jwt/lib/strategy.js:96:21)\n    at attempt (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:378:16)\n    at authenticate (/Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/passport/lib/middleware/authenticate.js:379:7)\n    at /Users/kevin/Downloads/WorkSpace/PandaCoin/backend/node_modules/@nestjs/passport/dist/auth.guard.js:88:3"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/login","timestamp":"2025-12-05 20:58:25"}
+{"context":"HTTP","level":"debug","message":"Body: {\"email\":\"test@pandacoin.com\",\"password\":\"***\"}","timestamp":"2025-12-05 20:58:25"}
+{"context":"HTTP","level":"debug","message":"📤 Response: POST /api/auth/login - 201 (93ms)","timestamp":"2025-12-05 20:58:25"}
+{"ip":"::1","level":"info","message":"HTTP Request","method":"POST","responseTime":"93ms","statusCode":201,"timestamp":"2025-12-05T12:58:25.653Z","url":"/api/auth/login","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"anonymous"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/login","timestamp":"2025-12-05 20:58:27"}
+{"context":"HTTP","level":"debug","message":"Body: {\"email\":\"test@pandacoin.com\",\"password\":\"***\"}","timestamp":"2025-12-05 20:58:27"}
+{"context":"HTTP","level":"debug","message":"📤 Response: POST /api/auth/login - 201 (83ms)","timestamp":"2025-12-05 20:58:27"}
+{"ip":"::1","level":"info","message":"HTTP Request","method":"POST","responseTime":"83ms","statusCode":201,"timestamp":"2025-12-05T12:58:27.154Z","url":"/api/auth/login","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"anonymous"}
+{"context":"NestFactory","level":"info","message":"Starting Nest application...","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"PrismaModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"LoggerModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"PassportModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"ConfigHostModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"ConfigModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"AiModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"AppModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"JwtModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"AccountsModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"RecordsModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"InstanceLoader","level":"info","message":"AuthModule dependencies initialized","timestamp":"2025-12-05 21:04:12"}
+{"context":"RoutesResolver","level":"info","message":"AppController {/api}:","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RoutesResolver","level":"info","message":"AuthController {/api/auth}:","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/register, POST} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/login, POST} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/auth/me, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RoutesResolver","level":"info","message":"AccountsController {/api/accounts}:","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, POST} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/total, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, PATCH} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/accounts/:id, DELETE} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RoutesResolver","level":"info","message":"RecordsController {/api/records}:","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, POST} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/voice, POST} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/statistics, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, GET} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, PATCH} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"RouterExplorer","level":"info","message":"Mapped {/api/records/:id, DELETE} route","timestamp":"2025-12-05 21:04:12"}
+{"context":"NestApplication","level":"info","message":"Nest application successfully started","timestamp":"2025-12-05 21:04:12"}
+{"context":"Bootstrap","level":"info","message":"\n🚀 PandaCoin API running on: http://localhost:3000/api","timestamp":"2025-12-05 21:04:12"}
+{"context":"Bootstrap","level":"info","message":"📊 Environment: development","timestamp":"2025-12-05 21:04:12"}
+{"context":"Bootstrap","level":"info","message":"📝 Log Level: debug\n","timestamp":"2025-12-05 21:04:12"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/login","timestamp":"2025-12-05 21:04:17"}
+{"context":"HTTP","level":"debug","message":"Body: {\"email\":\"test@pandacoin.com\",\"password\":\"***\"}","timestamp":"2025-12-05 21:04:17"}
+{"context":"HTTP","level":"debug","message":"📤 Response: POST /api/auth/login - 201 (90ms)","timestamp":"2025-12-05 21:04:17"}
+{"ip":"::1","level":"info","message":"HTTP Request","method":"POST","responseTime":"90ms","statusCode":201,"timestamp":"2025-12-05T13:04:17.587Z","url":"/api/auth/login","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"anonymous"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-05 21:04:17"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-05 21:04:17"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (4ms)","timestamp":"2025-12-05 21:04:17"}
+{"ip":"::1","level":"info","message":"HTTP Request","method":"GET","responseTime":"4ms","statusCode":200,"timestamp":"2025-12-05T13:04:17.804Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (4ms)","timestamp":"2025-12-05 21:04:17"}
+{"ip":"::1","level":"info","message":"HTTP Request","method":"GET","responseTime":"4ms","statusCode":200,"timestamp":"2025-12-05T13:04:17.806Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/login","timestamp":"2025-12-05 21:34:19"}
+{"context":"HTTP","level":"debug","message":"Body: {\"email\":\"test@pandacoin.com\",\"password\":\"***\"}","timestamp":"2025-12-05 21:34:19"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/auth/login","timestamp":"2025-12-05 21:34:19"}
+{"context":"HTTP","level":"debug","message":"Body: {\"password\":\"***\",\"email\":\"test@pandacoin.com\"}","timestamp":"2025-12-05 21:34:19"}
+{"context":"HTTP","level":"debug","message":"📤 Response: POST /api/auth/login - 201 (87ms)","timestamp":"2025-12-05 21:34:19"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"POST","responseTime":"87ms","statusCode":201,"timestamp":"2025-12-05T13:34:19.736Z","url":"/api/auth/login","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"anonymous"}
+{"context":"HTTP","level":"debug","message":"📤 Response: POST /api/auth/login - 201 (109ms)","timestamp":"2025-12-05 21:34:19"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"POST","responseTime":"109ms","statusCode":201,"timestamp":"2025-12-05T13:34:19.737Z","url":"/api/auth/login","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"anonymous"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-05 21:34:19"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-05 21:34:19"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (2ms)","timestamp":"2025-12-05 21:34:19"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T13:34:19.848Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (1ms)","timestamp":"2025-12-05 21:34:19"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"1ms","statusCode":200,"timestamp":"2025-12-05T13:34:19.849Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/auth/me","timestamp":"2025-12-05 21:42:33"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/auth/me - 200 (3ms)","timestamp":"2025-12-05 21:42:33"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"3ms","statusCode":200,"timestamp":"2025-12-05T13:42:33.666Z","url":"/api/auth/me","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-05 21:42:33"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (5ms)","timestamp":"2025-12-05 21:42:33"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"5ms","statusCode":200,"timestamp":"2025-12-05T13:42:33.845Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-05 21:42:33"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (3ms)","timestamp":"2025-12-05 21:42:33"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"3ms","statusCode":200,"timestamp":"2025-12-05T13:42:33.851Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/auth/me","timestamp":"2025-12-05 21:52:53"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/auth/me - 200 (2ms)","timestamp":"2025-12-05 21:52:53"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T13:52:53.344Z","url":"/api/auth/me","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-05 21:52:53"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (1ms)","timestamp":"2025-12-05 21:52:53"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"1ms","statusCode":200,"timestamp":"2025-12-05T13:52:53.792Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-05 21:52:53"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (2ms)","timestamp":"2025-12-05 21:52:53"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T13:52:53.803Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/auth/me","timestamp":"2025-12-05 21:55:24"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/auth/me - 200 (2ms)","timestamp":"2025-12-05 21:55:24"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T13:55:24.870Z","url":"/api/auth/me","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-05 21:55:25"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (2ms)","timestamp":"2025-12-05 21:55:25"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T13:55:25.175Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-05 21:55:25"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (2ms)","timestamp":"2025-12-05 21:55:25"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T13:55:25.181Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/auth/me","timestamp":"2025-12-05 21:56:58"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/auth/me - 200 (1ms)","timestamp":"2025-12-05 21:56:58"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"1ms","statusCode":200,"timestamp":"2025-12-05T13:56:58.481Z","url":"/api/auth/me","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-05 21:56:58"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-05 21:56:58"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (3ms)","timestamp":"2025-12-05 21:56:58"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"3ms","statusCode":200,"timestamp":"2025-12-05T13:56:58.496Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (2ms)","timestamp":"2025-12-05 21:56:58"}
+{"ip":"::ffff:192.168.199.150","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-05T13:56:58.497Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
