@@ -26,7 +26,7 @@ let QwenProvider = class QwenProvider {
     apiKey;
     endpoint = 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
     model = 'qwen-max';
-    timeout = 8000;
+    timeout = 10000;
     constructor(configService, logger) {
         this.configService = configService;
         this.logger = logger;

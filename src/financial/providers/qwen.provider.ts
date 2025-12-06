@@ -13,15 +13,26 @@ import { LoggerService } from '../../common/logger/logger.service';
  * Qwen Provider (国际版)
  * 使用阿里云通义千问进行财务语句解析
  * 特性：需从 LLM 输出中提取 JSON（正则/字符串清洗）
+ * 
+ * 文档参考：
+ * - DashScope API: https://help.aliyun.com/zh/model-studio/developer-reference/api-details
+ * - 国际版endpoint: dashscope-intl.aliyuncs.com
+ * - 国内版endpoint: dashscope.aliyuncs.com (如需切换)
+ * 
+ * 可用模型：
+ * - qwen-max: 最强性能，适合复杂任务
+ * - qwen-plus: 均衡性能和成本
+ * - qwen-turbo: 快速响应，适合简单任务
  */
 @Injectable()
 export class QwenProvider implements FinancialParsingProvider {
   readonly name = PROVIDER_NAMES.QWEN;
   private readonly apiKey: string;
+  // 国际版endpoint（如在国内使用，可改为 dashscope.aliyuncs.com）
   private readonly endpoint =
     'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
-  private readonly model = 'qwen-max';
-  private readonly timeout = 8000;
+  private readonly model = 'qwen-max'; // 或使用 qwen-turbo 提高速度
+  private readonly timeout = 10000;
 
   constructor(
     private readonly configService: ConfigService,

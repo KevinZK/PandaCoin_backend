@@ -24,8 +24,8 @@ let GeminiProvider = class GeminiProvider {
     logger;
     name = financial_parsing_provider_interface_1.PROVIDER_NAMES.GEMINI;
     apiKey;
-    endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-exp-03-25:generateContent';
-    timeout = 8000;
+    endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    timeout = 10000;
     constructor(configService, logger) {
         this.configService = configService;
         this.logger = logger;
@@ -39,38 +39,30 @@ let GeminiProvider = class GeminiProvider {
         try {
             this.logger.debug(`Gemini parsing: "${text.substring(0, 50)}..."`, 'GeminiProvider');
             const response = await axios_1.default.post(`${this.endpoint}?key=${this.apiKey}`, {
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
                 contents: [
                     {
-                        parts: [
-                            {
-                                text: `${systemPrompt}\n\nUser input: ${text}`,
-                            },
-                        ],
+                        role: 'user',
+                        parts: [{ text: `User input: ${text}` }],
                     },
                 ],
                 generationConfig: {
                     responseMimeType: 'application/json',
                     responseSchema: system_prompt_1.FINANCIAL_EVENTS_JSON_SCHEMA,
-                    temperature: 0.1,
+                    temperature: 0.0,
                     maxOutputTokens: 2048,
+                    topP: 0.95,
+                    thinkingConfig: {
+                        thinkingBudget: 0,
+                    },
                 },
                 safetySettings: [
-                    {
-                        category: 'HARM_CATEGORY_HARASSMENT',
-                        threshold: 'BLOCK_NONE',
-                    },
-                    {
-                        category: 'HARM_CATEGORY_HATE_SPEECH',
-                        threshold: 'BLOCK_NONE',
-                    },
-                    {
-                        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                        threshold: 'BLOCK_NONE',
-                    },
-                    {
-                        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                        threshold: 'BLOCK_NONE',
-                    },
+                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
                 ],
             }, {
                 timeout: this.timeout,
@@ -82,6 +74,7 @@ let GeminiProvider = class GeminiProvider {
             if (!content) {
                 throw new Error('Empty response from Gemini');
             }
+            this.logger.debug(`Gemini raw response: ${content}`, 'GeminiProvider');
             const parsed = JSON.parse(content);
             this.logger.debug(`Gemini parsed ${parsed.events.length} events`, 'GeminiProvider');
             return parsed;

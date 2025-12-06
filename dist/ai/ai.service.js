@@ -32,7 +32,7 @@ let AiService = class AiService {
                 this.logger.debug(`✅ 模拟解析完成: ${result.records.length}条记录`, 'AiService');
                 return result;
             }
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -44,6 +44,9 @@ let AiService = class AiService {
                     generationConfig: {
                         temperature: 0.1,
                         maxOutputTokens: 1024,
+                        thinkingConfig: {
+                            thinkingBudget: 0,
+                        },
                     },
                 }),
             });

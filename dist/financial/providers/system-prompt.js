@@ -17,7 +17,14 @@ Your sole function is to analyze the user's free-form financial statement, deter
 
 5. If the user's statement contains no identifiable financial data or a non-actionable command (e.g., "hello" or "what is the weather"), you MUST return the special JSON: {"events": [{"event_type": "NULL_STATEMENT", "data": {"error_message": "Non-financial or insufficient data."}}]}
 
-6. COMPOUND EVENTS: If the statement contains multiple distinct financial actions (e.g., "I earned 100 and transferred 50"), you MUST return multiple event objects within the "events" array.
+6. **COMPOUND EVENTS (CRITICAL)**: If the statement contains multiple distinct financial actions (e.g., "吃饭消荥39卖出一箱水果收获96" = eat 39 + sell fruit 96), you MUST return multiple event objects within the "events" array. DO NOT merge them into a single event.
+
+7. **REQUIRED FIELDS**: Every TRANSACTION event MUST include: transaction_type, amount, currency, category, date. Optional: source_account, note.
+
+8. **CHINESE KEYWORDS**: 
+   - "消费/花费/支出/买" = EXPENSE
+   - "收入/收获/赚/工资/卖出" = INCOME
+   - "转账" = TRANSFER
 
 [UNIFIED SCHEMA]
 {
@@ -71,6 +78,9 @@ Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPEN
 Input: "工资发了8000"
 Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"INCOME","amount":8000,"currency":"CNY","category":"INCOME_SALARY","date":"{CURRENT_DATE}"}}]}
 
+Input: "吃饭消荥39卖出一箱水果收获96"
+Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","amount":39,"currency":"CNY","category":"FOOD","note":"吃饭","date":"{CURRENT_DATE}"}},{"event_type":"TRANSACTION","data":{"transaction_type":"INCOME","amount":96,"currency":"CNY","category":"ASSET_SALE","note":"卖水果","date":"{CURRENT_DATE}"}}]}
+
 Input: "I spent $50 on groceries and earned $200 from freelance work"
 Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","amount":50,"currency":"USD","category":"FOOD","note":"groceries","date":"{CURRENT_DATE}"}},{"event_type":"TRANSACTION","data":{"transaction_type":"INCOME","amount":200,"currency":"USD","category":"OTHER","note":"freelance work","date":"{CURRENT_DATE}"}}]}`;
 function getSystemPrompt(currentDate) {
@@ -89,26 +99,35 @@ exports.FINANCIAL_EVENTS_JSON_SCHEMA = {
     properties: {
         events: {
             type: 'array',
+            description: 'Array of financial events',
             items: {
                 type: 'object',
                 properties: {
                     event_type: {
                         type: 'string',
+                        description: 'Event type in UPPERCASE',
                         enum: ['TRANSACTION', 'ASSET_UPDATE', 'GOAL', 'NULL_STATEMENT'],
                     },
                     data: {
                         type: 'object',
+                        description: 'Event data, fields depend on event_type',
                         properties: {
                             transaction_type: {
                                 type: 'string',
+                                description: 'For TRANSACTION: type in UPPERCASE',
                                 enum: ['EXPENSE', 'INCOME', 'TRANSFER', 'PAYMENT'],
                             },
-                            amount: { type: 'number' },
-                            currency: { type: 'string' },
-                            source_account: { type: 'string' },
-                            target_account: { type: 'string' },
+                            amount: {
+                                type: 'number',
+                                description: 'Transaction amount'
+                            },
+                            currency: {
+                                type: 'string',
+                                description: 'Currency code (e.g., CNY, USD)'
+                            },
                             category: {
                                 type: 'string',
+                                description: 'Category in UPPERCASE',
                                 enum: [
                                     'FOOD',
                                     'TRANSPORT',
@@ -123,50 +142,24 @@ exports.FINANCIAL_EVENTS_JSON_SCHEMA = {
                                     'OTHER',
                                 ],
                             },
-                            note: { type: 'string' },
-                            date: { type: 'string' },
-                            fee_amount: { type: 'number' },
-                            fee_currency: { type: 'string' },
-                            is_recurring: { type: 'boolean' },
-                            payment_schedule: {
+                            note: {
                                 type: 'string',
-                                enum: ['WEEKLY', 'MONTHLY', 'YEARLY'],
+                                description: 'Optional note or description'
                             },
-                            asset_type: {
+                            date: {
                                 type: 'string',
-                                enum: [
-                                    'BANK_BALANCE',
-                                    'STOCK',
-                                    'CRYPTO',
-                                    'PHYSICAL_ASSET',
-                                    'LIABILITY',
-                                    'FIXED_INCOME',
-                                ],
+                                description: 'Date in YYYY-MM-DD format'
                             },
-                            asset_name: { type: 'string' },
-                            institution_name: { type: 'string' },
-                            quantity: { type: 'number' },
-                            total_value: { type: 'number' },
-                            is_initial_record: { type: 'boolean' },
-                            cost_basis: { type: 'number' },
-                            cost_basis_currency: { type: 'string' },
-                            interest_rate_apy: { type: 'number' },
-                            maturity_date: { type: 'string' },
-                            goal_action: {
+                            source_account: {
                                 type: 'string',
-                                enum: ['CREATE_SAVINGS', 'CREATE_DEBT_REPAYMENT', 'UPDATE_TARGET'],
+                                description: 'Source account name'
                             },
-                            goal_name: { type: 'string' },
-                            target_amount: { type: 'number' },
-                            target_currency: { type: 'string' },
-                            target_date: { type: 'string' },
-                            priority: {
+                            target_account: {
                                 type: 'string',
-                                enum: ['HIGH', 'MEDIUM', 'LOW'],
+                                description: 'Target account name (for transfers)'
                             },
-                            current_contribution: { type: 'number' },
-                            error_message: { type: 'string' },
                         },
+                        required: ['transaction_type', 'amount', 'currency', 'category', 'date'],
                     },
                 },
                 required: ['event_type', 'data'],
