@@ -11,7 +11,6 @@ export declare class RecordsController {
         type: string;
         userId: string;
         amount: number;
-        accountId: string;
         description: string | null;
         rawText: string | null;
         date: Date;
@@ -20,6 +19,7 @@ export declare class RecordsController {
         aiRawResponse: string | null;
         quantity: number | null;
         unitPrice: number | null;
+        accountId: string;
         targetAccountId: string | null;
         investmentId: string | null;
     }>;
@@ -32,7 +32,6 @@ export declare class RecordsController {
             type: string;
             userId: string;
             amount: number;
-            accountId: string;
             description: string | null;
             rawText: string | null;
             date: Date;
@@ -41,6 +40,7 @@ export declare class RecordsController {
             aiRawResponse: string | null;
             quantity: number | null;
             unitPrice: number | null;
+            accountId: string;
             targetAccountId: string | null;
             investmentId: string | null;
         }[];
@@ -60,7 +60,6 @@ export declare class RecordsController {
         type: string;
         userId: string;
         amount: number;
-        accountId: string;
         description: string | null;
         rawText: string | null;
         date: Date;
@@ -69,6 +68,7 @@ export declare class RecordsController {
         aiRawResponse: string | null;
         quantity: number | null;
         unitPrice: number | null;
+        accountId: string;
         targetAccountId: string | null;
         investmentId: string | null;
     })[]>;
@@ -101,7 +101,6 @@ export declare class RecordsController {
         type: string;
         userId: string;
         amount: number;
-        accountId: string;
         description: string | null;
         rawText: string | null;
         date: Date;
@@ -110,6 +109,7 @@ export declare class RecordsController {
         aiRawResponse: string | null;
         quantity: number | null;
         unitPrice: number | null;
+        accountId: string;
         targetAccountId: string | null;
         investmentId: string | null;
     }>;
@@ -121,7 +121,6 @@ export declare class RecordsController {
         type: string;
         userId: string;
         amount: number;
-        accountId: string;
         description: string | null;
         rawText: string | null;
         date: Date;
@@ -130,6 +129,7 @@ export declare class RecordsController {
         aiRawResponse: string | null;
         quantity: number | null;
         unitPrice: number | null;
+        accountId: string;
         targetAccountId: string | null;
         investmentId: string | null;
     }>;
@@ -141,7 +141,6 @@ export declare class RecordsController {
         type: string;
         userId: string;
         amount: number;
-        accountId: string;
         description: string | null;
         rawText: string | null;
         date: Date;
@@ -150,6 +149,7 @@ export declare class RecordsController {
         aiRawResponse: string | null;
         quantity: number | null;
         unitPrice: number | null;
+        accountId: string;
         targetAccountId: string | null;
         investmentId: string | null;
     }>;

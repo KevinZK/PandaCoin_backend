@@ -26,11 +26,11 @@ let AccountsController = class AccountsController {
     }
     async create(user, dto) {
         const result = await this.accountsService.create(user.id, dto);
-        return response_dto_1.ResponseDto.success(result, '创建账户成功');
+        return response_dto_1.ResponseDto.success(result, '创建资产成功');
     }
     async findAll(user) {
         const result = await this.accountsService.findAll(user.id);
-        return response_dto_1.ResponseDto.success(result, '获取账户列表成功');
+        return response_dto_1.ResponseDto.success(result, '获取资产列表成功');
     }
     async getTotalAssets(user) {
         const result = await this.accountsService.getTotalAssets(user.id);
@@ -38,15 +38,15 @@ let AccountsController = class AccountsController {
     }
     async findOne(user, id) {
         const result = await this.accountsService.findOne(id, user.id);
-        return response_dto_1.ResponseDto.success(result, '获取账户详情成功');
+        return response_dto_1.ResponseDto.success(result, '获取资产详情成功');
     }
     async update(user, id, dto) {
         const result = await this.accountsService.update(id, user.id, dto);
-        return response_dto_1.ResponseDto.success(result, '更新账户成功');
+        return response_dto_1.ResponseDto.success(result, '更新资产成功');
     }
     async remove(user, id) {
         const result = await this.accountsService.remove(id, user.id);
-        return response_dto_1.ResponseDto.success(result, '删除账户成功');
+        return response_dto_1.ResponseDto.success(result, '删除资产成功');
     }
 };
 exports.AccountsController = AccountsController;
@@ -98,7 +98,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AccountsController.prototype, "remove", null);
 exports.AccountsController = AccountsController = __decorate([
-    (0, common_1.Controller)('accounts'),
+    (0, common_1.Controller)('assets'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [accounts_service_1.AccountsService])
 ], AccountsController);

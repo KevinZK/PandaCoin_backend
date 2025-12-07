@@ -17,11 +17,13 @@ Your sole function is to analyze the user's free-form financial statement, deter
 
 5. If the user's statement contains no identifiable financial data or a non-actionable command (e.g., "hello" or "what is the weather"), you MUST return the special JSON: {"events": [{"event_type": "NULL_STATEMENT", "data": {"error_message": "Non-financial or insufficient data."}}]}
 
-6. **COMPOUND EVENTS (CRITICAL)**: If the statement contains multiple distinct financial actions (e.g., "吃饭消荥39卖出一箱水果收获96" = eat 39 + sell fruit 96), you MUST return multiple event objects within the "events" array. DO NOT merge them into a single event.
+6. COMPOUND EVENTS (CRITICAL): If the statement contains multiple distinct financial actions (e.g., "吃饭消荥39卖出一箱水果收获96" = eat 39 + sell fruit 96), you MUST return multiple event objects within the "events" array. DO NOT merge them into a single event.
 
-7. **REQUIRED FIELDS**: Every TRANSACTION event MUST include: transaction_type, amount, currency, category, date. Optional: source_account, note.
+7. MAXIMUM COMPRESSION: The output JSON MUST be in the most compact format possible. **It MUST NOT contain any newlines, indentation, or unnecessary whitespace.** Furthermore, since the data structure is flattened, you MUST **OMIT** all fields from the 'data' object that are not relevant to the specified 'event_type' or cannot be determined.
 
-8. **CHINESE KEYWORDS**: 
+8. ENTITY CANONICALIZATION (Fuzzy Matching): When extracting entity names (source_account, target_account, asset_name, institution_name), you MUST prioritize the core proper name by removing generic, descriptive suffixes or prefixes related to the entity type. Examples of terms to remove include: "Card", "Account", "Wallet", "Bank", "Stock", "Fund", "Savings", "Checking", "卡", "账户", "银行", "基金", "股票" (e.g., "招商银行卡" should become "招商银行").
+
+9. CHINESE KEYWORDS: 
    - "消费/花费/支出/买" = EXPENSE
    - "收入/收获/赚/工资/卖出" = INCOME
    - "转账" = TRANSFER
@@ -30,9 +32,9 @@ Your sole function is to analyze the user's free-form financial statement, deter
 {
   "events": [
     {
-      "event_type": "TRANSACTION" | "ASSET_UPDATE" | "GOAL" | "NULL_STATEMENT",
+      "event_type": "TRANSACTION" | "ASSET_UPDATE" | "BUDGET" | "NULL_STATEMENT",
       "data": {
-        // Content depends on event_type
+        // Content depends on event_type. Only relevant fields (as per Rule 7) should be present.
       }
     }
   ]
@@ -61,14 +63,14 @@ Your sole function is to analyze the user's free-form financial statement, deter
    - interest_rate_apy (number, optional): Annual Percentage Yield/Rate for the asset or liability.
    - maturity_date (string, optional): YYYY-MM-DD for fixed-term assets/loans.
 
-3. GOAL (Financial plans, savings targets, or debt targets)
-   data schema: { goal_action, goal_name, target_amount, target_currency, target_date, priority, current_contribution }
+3. BUDGET (Financial plans, savings targets, or debt targets)
+   data schema: { budget_action, budget_name, target_amount, target_currency, target_date, priority, current_contribution }
    
-   goal_action ENUMS: "CREATE_SAVINGS", "CREATE_DEBT_REPAYMENT", "UPDATE_TARGET"
+   budget_action ENUMS: "CREATE_SAVINGS", "CREATE_DEBT_REPAYMENT", "UPDATE_TARGET"
    
    NEW FIELDS:
    - priority (ENUM): "HIGH", "MEDIUM", "LOW".
-   - current_contribution (number, optional): The amount already saved or paid towards this goal.
+   - current_contribution (number, optional): The amount already saved or paid towards this budget.
 
 [EXAMPLES]
 
@@ -119,7 +121,7 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
           event_type: {
             type: 'string',
             description: 'Event type in UPPERCASE',
-            enum: ['TRANSACTION', 'ASSET_UPDATE', 'GOAL', 'NULL_STATEMENT'],
+            enum: ['TRANSACTION', 'ASSET_UPDATE', 'BUDGET', 'NULL_STATEMENT'],
           },
           data: {
             type: 'object',
