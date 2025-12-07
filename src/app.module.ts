@@ -13,6 +13,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { FinancialModule } from './financial/financial.module';
 import { ScheduledModule } from './scheduled/scheduled.module';
 import { BudgetsModule } from './budgets/budgets.module';
+import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { BudgetsModule } from './budgets/budgets.module';
     FinancialModule,
     ScheduledModule,
     BudgetsModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [

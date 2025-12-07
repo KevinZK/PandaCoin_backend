@@ -20,6 +20,10 @@ export declare class RecordsService {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
     createFromVoice(userId: string, dto: VoiceRecordDto): Promise<{
         records: {
@@ -37,6 +41,10 @@ export declare class RecordsService {
             isConfirmed: boolean;
             confidence: number | null;
             aiRawResponse: string | null;
+            quantity: number | null;
+            unitPrice: number | null;
+            targetAccountId: string | null;
+            investmentId: string | null;
         }[];
         originalText: string;
     }>;
@@ -67,6 +75,10 @@ export declare class RecordsService {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     })[]>;
     findOne(id: string, userId: string): Promise<{
         account: {
@@ -94,6 +106,10 @@ export declare class RecordsService {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
     update(id: string, userId: string, dto: UpdateRecordDto): Promise<{
         category: string;
@@ -110,6 +126,10 @@ export declare class RecordsService {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
     remove(id: string, userId: string): Promise<{
         category: string;
@@ -126,6 +146,10 @@ export declare class RecordsService {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
     private updateAccountBalance;
     getStatistics(userId: string, period?: 'month' | 'year'): Promise<{

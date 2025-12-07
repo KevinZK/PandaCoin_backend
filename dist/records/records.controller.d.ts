@@ -18,6 +18,10 @@ export declare class RecordsController {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
     createFromVoice(user: any, dto: VoiceRecordDto): Promise<{
         records: {
@@ -35,6 +39,10 @@ export declare class RecordsController {
             isConfirmed: boolean;
             confidence: number | null;
             aiRawResponse: string | null;
+            quantity: number | null;
+            unitPrice: number | null;
+            targetAccountId: string | null;
+            investmentId: string | null;
         }[];
         originalText: string;
     }>;
@@ -59,6 +67,10 @@ export declare class RecordsController {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     })[]>;
     getStatistics(user: any, period?: 'month' | 'year'): Promise<{
         period: "year" | "month";
@@ -96,6 +108,10 @@ export declare class RecordsController {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
     update(user: any, id: string, dto: UpdateRecordDto): Promise<{
         category: string;
@@ -112,6 +128,10 @@ export declare class RecordsController {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
     remove(user: any, id: string): Promise<{
         category: string;
@@ -128,5 +148,9 @@ export declare class RecordsController {
         isConfirmed: boolean;
         confidence: number | null;
         aiRawResponse: string | null;
+        quantity: number | null;
+        unitPrice: number | null;
+        targetAccountId: string | null;
+        investmentId: string | null;
     }>;
 }

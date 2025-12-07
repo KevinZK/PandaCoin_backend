@@ -24,7 +24,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateAccountDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(['BANK', 'INVESTMENT', 'CASH', 'CREDIT_CARD']),
+    (0, class_validator_1.IsEnum)(['BANK', 'INVESTMENT', 'CASH', 'CREDIT_CARD', 'DIGITAL_WALLET', 'LOAN', 'MORTGAGE', 'SAVINGS', 'RETIREMENT', 'CRYPTO', 'PROPERTY', 'VEHICLE', 'OTHER_ASSET', 'OTHER_LIABILITY']),
     __metadata("design:type", String)
 ], CreateAccountDto.prototype, "type", void 0);
 __decorate([

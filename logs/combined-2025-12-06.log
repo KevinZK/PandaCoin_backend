@@ -1461,3 +1461,43 @@
 {"context":"FinancialParsingService","level":"info","message":"Successfully parsed with Gemini in 1710ms","timestamp":"2025-12-06 16:04:15"}
 {"context":"HTTP","level":"debug","message":"📤 Response: POST /api/financial/parse - 200 (1720ms)","timestamp":"2025-12-06 16:04:15"}
 {"ip":"192.168.199.150","level":"info","message":"HTTP Request","method":"POST","responseTime":"1720ms","statusCode":200,"timestamp":"2025-12-06T08:04:15.968Z","url":"/api/financial/parse","userAgent":"PandaCoin/1 CFNetwork/3860.300.31 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/auth/me","timestamp":"2025-12-06 17:05:26"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/auth/me - 200 (3ms)","timestamp":"2025-12-06 17:05:26"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"3ms","statusCode":200,"timestamp":"2025-12-06T09:05:26.772Z","url":"/api/auth/me","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-06 17:05:26"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-06 17:05:26"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (5ms)","timestamp":"2025-12-06 17:05:26"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"5ms","statusCode":200,"timestamp":"2025-12-06T09:05:26.986Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (4ms)","timestamp":"2025-12-06 17:05:26"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"4ms","statusCode":200,"timestamp":"2025-12-06T09:05:26.988Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-06 17:05:32"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (1ms)","timestamp":"2025-12-06 17:05:32"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"1ms","statusCode":200,"timestamp":"2025-12-06T09:05:32.471Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records/statistics?period=month","timestamp":"2025-12-06 17:09:44"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records/statistics?period=month - 200 (5ms)","timestamp":"2025-12-06 17:09:44"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"5ms","statusCode":200,"timestamp":"2025-12-06T09:09:44.892Z","url":"/api/records/statistics?period=month","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-06 17:09:52"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-06 17:09:52"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (3ms)","timestamp":"2025-12-06 17:09:52"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"3ms","statusCode":200,"timestamp":"2025-12-06T09:09:52.648Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (3ms)","timestamp":"2025-12-06 17:09:52"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"3ms","statusCode":200,"timestamp":"2025-12-06T09:09:52.649Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-06 17:16:20"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (3ms)","timestamp":"2025-12-06 17:16:20"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"3ms","statusCode":200,"timestamp":"2025-12-06T09:16:20.368Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/auth/me","timestamp":"2025-12-06 18:59:40"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/auth/me - 200 (2ms)","timestamp":"2025-12-06 18:59:40"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-06T10:59:40.149Z","url":"/api/auth/me","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-06 18:59:40"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (4ms)","timestamp":"2025-12-06 18:59:40"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"4ms","statusCode":200,"timestamp":"2025-12-06T10:59:40.317Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/records","timestamp":"2025-12-06 18:59:40"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/records - 200 (2ms)","timestamp":"2025-12-06 18:59:40"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-06T10:59:40.347Z","url":"/api/records","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: GET /api/accounts","timestamp":"2025-12-06 18:59:55"}
+{"context":"HTTP","level":"debug","message":"📤 Response: GET /api/accounts - 200 (2ms)","timestamp":"2025-12-06 18:59:55"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"GET","responseTime":"2ms","statusCode":200,"timestamp":"2025-12-06T10:59:55.695Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}
+{"context":"HTTP","level":"debug","message":"📥 Incoming Request: POST /api/accounts","timestamp":"2025-12-06 19:00:27"}
+{"context":"HTTP","level":"debug","message":"Body: {\"type\":\"BANK\",\"name\":\"招商银行\",\"currency\":\"CNY\",\"balance\":50000}","timestamp":"2025-12-06 19:00:27"}
+{"context":"HTTP","level":"debug","message":"📤 Response: POST /api/accounts - 201 (15ms)","timestamp":"2025-12-06 19:00:27"}
+{"ip":"127.0.0.1","level":"info","message":"HTTP Request","method":"POST","responseTime":"15ms","statusCode":201,"timestamp":"2025-12-06T11:00:27.034Z","url":"/api/accounts","userAgent":"PandaCoin/1 CFNetwork/3860.200.71 Darwin/25.2.0","userId":"5f925b60-022f-42af-b5e5-0eb7d91cdb2f"}

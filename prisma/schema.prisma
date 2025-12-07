@@ -39,15 +39,16 @@ model Account {
   id        String      @id @default(uuid())
   name      String      // 账户名称,例如:招商银行、支付宝
   type      String      // 账户类型: BANK, INVESTMENT, CASH, CREDIT_CARD
-  balance   Float     @default(0) // 当前余额
+  balance   Float     @default(0) // 当前余额(信用卡为负=欠款)
   currency  String      @default("CNY")
   userId    String      @map("user_id")
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
 
   // 关联关系
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  records Record[]
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceRecords  Record[] @relation("SourceAccount") // 作为源账户的记录
+  targetRecords  Record[] @relation("TargetAccount") // 作为目标账户的记录
 
   @@index([userId])
   @@map("accounts")
@@ -58,6 +59,16 @@ model Account {
 // INVESTMENT = 投资账户
 // CASH = 现金
 // CREDIT_CARD = 信用卡
+// DIGITAL_WALLET = 电子钱包
+// LOAN = 贷款
+// MORTGAGE = 房贷
+// SAVINGS = 储蓄账户
+// RETIREMENT = 养老金
+// CRYPTO = 加密货币
+// PROPERTY = 房产
+// VEHICLE = 车辆
+// OTHER_ASSET = 其他资产
+// OTHER_LIABILITY = 其他负债
 
 // =============================================
 // 记账记录模型
@@ -65,7 +76,7 @@ model Account {
 model Record {
   id          String     @id @default(uuid())
   amount      Float    // 金额
-  type        String     // 记账类型: EXPENSE, INCOME, TRANSFER
+  type        String     // 记账类型: EXPENSE, INCOME, TRANSFER, INVEST_BUY, INVEST_SELL, REPAYMENT
   category    String     // 分类名称
   description String?    // 备注
   rawText     String?    @map("raw_text") // AI语音原始文本
@@ -77,13 +88,24 @@ model Record {
   aiRawResponse String?  @map("ai_raw_response") // AI原始响应,用于调试
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
+  
+  // 转账/还款场景: 目标账户
+  targetAccountId String? @map("target_account_id")
+  
+  // 投资场景: 关联持仓
+  investmentId    String? @map("investment_id")
+  quantity        Float?  // 买卖数量
+  unitPrice       Float?  @map("unit_price") // 单价
 
   // 关联关系
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       Account     @relation("SourceAccount", fields: [accountId], references: [id], onDelete: Cascade)
+  targetAccount Account?    @relation("TargetAccount", fields: [targetAccountId], references: [id])
+  investment    Investment? @relation(fields: [investmentId], references: [id])
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
   @@index([accountId])
+  @@index([targetAccountId])
   @@index([category])
   @@map("records")
 }
@@ -145,11 +167,14 @@ model Investment {
   type          String   // STOCK, FUND, CRYPTO
   code          String?  // 股票代码/基金代码
   costPrice     Float  @map("cost_price") // 成本价
-  currentPrice  Float? @map("current_price") // 当前价格
+  currentPrice  Float? @map("current_price") // 当前价格(用户手动更新)
   quantity      Float  // 持仓数量
   userId        String   @map("user_id")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // 关联记录
+  records       Record[]
 
   @@index([userId])
   @@map("investments")
