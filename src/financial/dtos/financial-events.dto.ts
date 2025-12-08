@@ -15,7 +15,7 @@ import { Type } from 'class-transformer';
 export enum EventType {
   TRANSACTION = 'TRANSACTION',
   ASSET_UPDATE = 'ASSET_UPDATE',
-  GOAL = 'GOAL',
+  BUDGET = 'BUDGET',
   NULL_STATEMENT = 'NULL_STATEMENT',
 }
 
@@ -49,7 +49,7 @@ export enum AssetType {
   FIXED_INCOME = 'FIXED_INCOME',
 }
 
-export enum GoalAction {
+export enum BudgetAction {
   CREATE_SAVINGS = 'CREATE_SAVINGS',
   CREATE_DEBT_REPAYMENT = 'CREATE_DEBT_REPAYMENT',
   UPDATE_TARGET = 'UPDATE_TARGET',
@@ -166,13 +166,13 @@ export class AssetUpdateData {
   maturity_date?: string;
 }
 
-export class GoalData {
-  @IsEnum(GoalAction)
-  goal_action: GoalAction;
+export class BudgetData {
+  @IsEnum(BudgetAction)
+  budget_action: BudgetAction;
 
   @IsString()
   @IsOptional()
-  goal_name?: string;
+  budget_name?: string;
 
   @IsNumber()
   @IsOptional()
@@ -205,7 +205,7 @@ export class NullStatementData {
 export type FinancialEventData =
   | TransactionData
   | AssetUpdateData
-  | GoalData
+  | BudgetData
   | NullStatementData;
 
 // ==================== Main DTOs ====================
