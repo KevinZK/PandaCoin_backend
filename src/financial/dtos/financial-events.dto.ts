@@ -15,6 +15,7 @@ import { Type } from 'class-transformer';
 export enum EventType {
   TRANSACTION = 'TRANSACTION',
   ASSET_UPDATE = 'ASSET_UPDATE',
+  CREDIT_CARD_UPDATE = 'CREDIT_CARD_UPDATE',
   BUDGET = 'BUDGET',
   NULL_STATEMENT = 'NULL_STATEMENT',
 }
@@ -41,18 +42,25 @@ export enum Category {
 }
 
 export enum AssetType {
-  BANK_BALANCE = 'BANK_BALANCE',
-  STOCK = 'STOCK',
+  BANK = 'BANK',
+  INVESTMENT = 'INVESTMENT',
+  CASH = 'CASH',
+  CREDIT_CARD = 'CREDIT_CARD',
+  DIGITAL_WALLET = 'DIGITAL_WALLET',
+  LOAN = 'LOAN',
+  MORTGAGE = 'MORTGAGE',
+  SAVINGS = 'SAVINGS',
+  RETIREMENT = 'RETIREMENT',
   CRYPTO = 'CRYPTO',
-  PHYSICAL_ASSET = 'PHYSICAL_ASSET',
-  LIABILITY = 'LIABILITY',
-  FIXED_INCOME = 'FIXED_INCOME',
+  PROPERTY = 'PROPERTY',
+  VEHICLE = 'VEHICLE',
+  OTHER_ASSET = 'OTHER_ASSET',
+  OTHER_LIABILITY = 'OTHER_LIABILITY',
 }
 
 export enum BudgetAction {
-  CREATE_SAVINGS = 'CREATE_SAVINGS',
-  CREATE_DEBT_REPAYMENT = 'CREATE_DEBT_REPAYMENT',
-  UPDATE_TARGET = 'UPDATE_TARGET',
+  CREATE_BUDGET = 'CREATE_BUDGET',
+  UPDATE_BUDGET = 'UPDATE_BUDGET',
 }
 
 export enum Priority {
@@ -115,6 +123,10 @@ export class TransactionData {
   @IsEnum(PaymentSchedule)
   @IsOptional()
   payment_schedule?: PaymentSchedule;
+
+  @IsString()
+  @IsOptional()
+  card_identifier?: string;
 }
 
 export class AssetUpdateData {
@@ -123,7 +135,11 @@ export class AssetUpdateData {
 
   @IsString()
   @IsOptional()
-  asset_name?: string;
+  name?: string;
+
+  @IsNumber()
+  @IsOptional()
+  amount?: number;
 
   @IsString()
   @IsOptional()
@@ -136,10 +152,6 @@ export class AssetUpdateData {
   @IsString()
   @IsOptional()
   currency?: string;
-
-  @IsNumber()
-  @IsOptional()
-  total_value?: number;
 
   @IsDateString()
   @IsOptional()
@@ -164,6 +176,26 @@ export class AssetUpdateData {
   @IsDateString()
   @IsOptional()
   maturity_date?: string;
+
+  @IsNumber()
+  @IsOptional()
+  projected_value?: number;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+  @IsNumber()
+  @IsOptional()
+  repayment_amount?: number;
+
+  @IsEnum(PaymentSchedule)
+  @IsOptional()
+  repayment_schedule?: PaymentSchedule;
+
+  @IsString()
+  @IsOptional()
+  card_identifier?: string;
 }
 
 export class BudgetData {
@@ -172,27 +204,57 @@ export class BudgetData {
 
   @IsString()
   @IsOptional()
-  budget_name?: string;
+  name?: string;
 
   @IsNumber()
   @IsOptional()
-  target_amount?: number;
+  amount?: number;
 
   @IsString()
   @IsOptional()
-  target_currency?: string;
+  currency?: string;
 
   @IsDateString()
   @IsOptional()
-  target_date?: string;
+  date?: string;
 
   @IsEnum(Priority)
   @IsOptional()
   priority?: Priority;
+}
+
+export class CreditCardUpdateData {
+  @IsString()
+  @IsOptional()
+  name?: string;
 
   @IsNumber()
   @IsOptional()
-  current_contribution?: number;
+  amount?: number;
+
+  @IsString()
+  @IsOptional()
+  currency?: string;
+
+  @IsDateString()
+  @IsOptional()
+  date?: string;
+
+  @IsString()
+  @IsOptional()
+  institution_name?: string;
+
+  @IsNumber()
+  @IsOptional()
+  credit_limit?: number;
+
+  @IsString()
+  @IsOptional()
+  repayment_due_date?: string;
+
+  @IsString()
+  @IsOptional()
+  card_identifier?: string;
 }
 
 export class NullStatementData {
@@ -205,6 +267,7 @@ export class NullStatementData {
 export type FinancialEventData =
   | TransactionData
   | AssetUpdateData
+  | CreditCardUpdateData
   | BudgetData
   | NullStatementData;
 

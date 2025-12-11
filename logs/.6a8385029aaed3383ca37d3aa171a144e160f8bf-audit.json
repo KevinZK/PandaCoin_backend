@@ -19,6 +19,26 @@
             "date": 1765047600182,
             "name": "logs/combined-2025-12-07.log",
             "hash": "59e562eda0c9a0afd9358a4bedaecb8df00bc033d4d466802285583d21619b2b"
+        },
+        {
+            "date": 1765134000097,
+            "name": "logs/combined-2025-12-08.log",
+            "hash": "4c5895e5780a31e33034d835da4ed7a7f2be734ba80eaeb6391fd3779b3a4c0a"
+        },
+        {
+            "date": 1765220400247,
+            "name": "logs/combined-2025-12-09.log",
+            "hash": "1345f9c55e9cb91efe31e3f92f4a27f39d555a950e878a744b7d951610ab54c5"
+        },
+        {
+            "date": 1765296930428,
+            "name": "logs/combined-2025-12-10.log",
+            "hash": "7e144628a09abdfe52bd1d920fb68cfdbbca75108da8ae670481a9008c9f3288"
+        },
+        {
+            "date": 1765394112825,
+            "name": "logs/combined-2025-12-11.log",
+            "hash": "9268861cb5f03445fde2cd194d26eb58821a18b647acb05b2d4899b6c369e213"
         }
     ],
     "hashType": "sha256"

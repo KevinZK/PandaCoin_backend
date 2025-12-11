@@ -1,7 +1,8 @@
 export declare enum EventType {
     TRANSACTION = "TRANSACTION",
     ASSET_UPDATE = "ASSET_UPDATE",
-    GOAL = "GOAL",
+    CREDIT_CARD_UPDATE = "CREDIT_CARD_UPDATE",
+    BUDGET = "BUDGET",
     NULL_STATEMENT = "NULL_STATEMENT"
 }
 export declare enum TransactionType {
@@ -24,17 +25,24 @@ export declare enum Category {
     OTHER = "OTHER"
 }
 export declare enum AssetType {
-    BANK_BALANCE = "BANK_BALANCE",
-    STOCK = "STOCK",
+    BANK = "BANK",
+    INVESTMENT = "INVESTMENT",
+    CASH = "CASH",
+    CREDIT_CARD = "CREDIT_CARD",
+    DIGITAL_WALLET = "DIGITAL_WALLET",
+    LOAN = "LOAN",
+    MORTGAGE = "MORTGAGE",
+    SAVINGS = "SAVINGS",
+    RETIREMENT = "RETIREMENT",
     CRYPTO = "CRYPTO",
-    PHYSICAL_ASSET = "PHYSICAL_ASSET",
-    LIABILITY = "LIABILITY",
-    FIXED_INCOME = "FIXED_INCOME"
+    PROPERTY = "PROPERTY",
+    VEHICLE = "VEHICLE",
+    OTHER_ASSET = "OTHER_ASSET",
+    OTHER_LIABILITY = "OTHER_LIABILITY"
 }
-export declare enum GoalAction {
-    CREATE_SAVINGS = "CREATE_SAVINGS",
-    CREATE_DEBT_REPAYMENT = "CREATE_DEBT_REPAYMENT",
-    UPDATE_TARGET = "UPDATE_TARGET"
+export declare enum BudgetAction {
+    CREATE_BUDGET = "CREATE_BUDGET",
+    UPDATE_BUDGET = "UPDATE_BUDGET"
 }
 export declare enum Priority {
     HIGH = "HIGH",
@@ -59,34 +67,49 @@ export declare class TransactionData {
     fee_currency?: string;
     is_recurring?: boolean;
     payment_schedule?: PaymentSchedule;
+    card_identifier?: string;
 }
 export declare class AssetUpdateData {
     asset_type: AssetType;
-    asset_name?: string;
+    name?: string;
+    amount?: number;
     institution_name?: string;
     quantity?: number;
     currency?: string;
-    total_value?: number;
     date?: string;
     is_initial_record?: boolean;
     cost_basis?: number;
     cost_basis_currency?: string;
     interest_rate_apy?: number;
     maturity_date?: string;
+    projected_value?: number;
+    location?: string;
+    repayment_amount?: number;
+    repayment_schedule?: PaymentSchedule;
+    card_identifier?: string;
 }
-export declare class GoalData {
-    goal_action: GoalAction;
-    goal_name?: string;
-    target_amount?: number;
-    target_currency?: string;
-    target_date?: string;
+export declare class BudgetData {
+    budget_action: BudgetAction;
+    name?: string;
+    amount?: number;
+    currency?: string;
+    date?: string;
     priority?: Priority;
-    current_contribution?: number;
+}
+export declare class CreditCardUpdateData {
+    name?: string;
+    amount?: number;
+    currency?: string;
+    date?: string;
+    institution_name?: string;
+    credit_limit?: number;
+    repayment_due_date?: string;
+    card_identifier?: string;
 }
 export declare class NullStatementData {
     error_message?: string;
 }
-export type FinancialEventData = TransactionData | AssetUpdateData | GoalData | NullStatementData;
+export type FinancialEventData = TransactionData | AssetUpdateData | CreditCardUpdateData | BudgetData | NullStatementData;
 export declare class FinancialEventDto {
     event_type: EventType;
     data: FinancialEventData;

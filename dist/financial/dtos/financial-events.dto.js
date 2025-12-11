@@ -9,14 +9,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ParseFinancialRequestDto = exports.FinancialEventsResponseDto = exports.FinancialEventDto = exports.NullStatementData = exports.GoalData = exports.AssetUpdateData = exports.TransactionData = exports.PaymentSchedule = exports.Priority = exports.GoalAction = exports.AssetType = exports.Category = exports.TransactionType = exports.EventType = void 0;
+exports.ParseFinancialRequestDto = exports.FinancialEventsResponseDto = exports.FinancialEventDto = exports.NullStatementData = exports.CreditCardUpdateData = exports.BudgetData = exports.AssetUpdateData = exports.TransactionData = exports.PaymentSchedule = exports.Priority = exports.BudgetAction = exports.AssetType = exports.Category = exports.TransactionType = exports.EventType = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 var EventType;
 (function (EventType) {
     EventType["TRANSACTION"] = "TRANSACTION";
     EventType["ASSET_UPDATE"] = "ASSET_UPDATE";
-    EventType["GOAL"] = "GOAL";
+    EventType["CREDIT_CARD_UPDATE"] = "CREDIT_CARD_UPDATE";
+    EventType["BUDGET"] = "BUDGET";
     EventType["NULL_STATEMENT"] = "NULL_STATEMENT";
 })(EventType || (exports.EventType = EventType = {}));
 var TransactionType;
@@ -42,19 +43,26 @@ var Category;
 })(Category || (exports.Category = Category = {}));
 var AssetType;
 (function (AssetType) {
-    AssetType["BANK_BALANCE"] = "BANK_BALANCE";
-    AssetType["STOCK"] = "STOCK";
+    AssetType["BANK"] = "BANK";
+    AssetType["INVESTMENT"] = "INVESTMENT";
+    AssetType["CASH"] = "CASH";
+    AssetType["CREDIT_CARD"] = "CREDIT_CARD";
+    AssetType["DIGITAL_WALLET"] = "DIGITAL_WALLET";
+    AssetType["LOAN"] = "LOAN";
+    AssetType["MORTGAGE"] = "MORTGAGE";
+    AssetType["SAVINGS"] = "SAVINGS";
+    AssetType["RETIREMENT"] = "RETIREMENT";
     AssetType["CRYPTO"] = "CRYPTO";
-    AssetType["PHYSICAL_ASSET"] = "PHYSICAL_ASSET";
-    AssetType["LIABILITY"] = "LIABILITY";
-    AssetType["FIXED_INCOME"] = "FIXED_INCOME";
+    AssetType["PROPERTY"] = "PROPERTY";
+    AssetType["VEHICLE"] = "VEHICLE";
+    AssetType["OTHER_ASSET"] = "OTHER_ASSET";
+    AssetType["OTHER_LIABILITY"] = "OTHER_LIABILITY";
 })(AssetType || (exports.AssetType = AssetType = {}));
-var GoalAction;
-(function (GoalAction) {
-    GoalAction["CREATE_SAVINGS"] = "CREATE_SAVINGS";
-    GoalAction["CREATE_DEBT_REPAYMENT"] = "CREATE_DEBT_REPAYMENT";
-    GoalAction["UPDATE_TARGET"] = "UPDATE_TARGET";
-})(GoalAction || (exports.GoalAction = GoalAction = {}));
+var BudgetAction;
+(function (BudgetAction) {
+    BudgetAction["CREATE_BUDGET"] = "CREATE_BUDGET";
+    BudgetAction["UPDATE_BUDGET"] = "UPDATE_BUDGET";
+})(BudgetAction || (exports.BudgetAction = BudgetAction = {}));
 var Priority;
 (function (Priority) {
     Priority["HIGH"] = "HIGH";
@@ -80,6 +88,7 @@ class TransactionData {
     fee_currency;
     is_recurring;
     payment_schedule;
+    card_identifier;
 }
 exports.TransactionData = TransactionData;
 __decorate([
@@ -140,19 +149,29 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], TransactionData.prototype, "payment_schedule", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], TransactionData.prototype, "card_identifier", void 0);
 class AssetUpdateData {
     asset_type;
-    asset_name;
+    name;
+    amount;
     institution_name;
     quantity;
     currency;
-    total_value;
     date;
     is_initial_record;
     cost_basis;
     cost_basis_currency;
     interest_rate_apy;
     maturity_date;
+    projected_value;
+    location;
+    repayment_amount;
+    repayment_schedule;
+    card_identifier;
 }
 exports.AssetUpdateData = AssetUpdateData;
 __decorate([
@@ -163,7 +182,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], AssetUpdateData.prototype, "asset_name", void 0);
+], AssetUpdateData.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], AssetUpdateData.prototype, "amount", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
@@ -179,11 +203,6 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], AssetUpdateData.prototype, "currency", void 0);
-__decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Number)
-], AssetUpdateData.prototype, "total_value", void 0);
 __decorate([
     (0, class_validator_1.IsDateString)(),
     (0, class_validator_1.IsOptional)(),
@@ -214,50 +233,120 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], AssetUpdateData.prototype, "maturity_date", void 0);
-class GoalData {
-    goal_action;
-    goal_name;
-    target_amount;
-    target_currency;
-    target_date;
-    priority;
-    current_contribution;
-}
-exports.GoalData = GoalData;
-__decorate([
-    (0, class_validator_1.IsEnum)(GoalAction),
-    __metadata("design:type", String)
-], GoalData.prototype, "goal_action", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], GoalData.prototype, "goal_name", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
-], GoalData.prototype, "target_amount", void 0);
+], AssetUpdateData.prototype, "projected_value", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], GoalData.prototype, "target_currency", void 0);
+], AssetUpdateData.prototype, "location", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], AssetUpdateData.prototype, "repayment_amount", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(PaymentSchedule),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], AssetUpdateData.prototype, "repayment_schedule", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], AssetUpdateData.prototype, "card_identifier", void 0);
+class BudgetData {
+    budget_action;
+    name;
+    amount;
+    currency;
+    date;
+    priority;
+}
+exports.BudgetData = BudgetData;
+__decorate([
+    (0, class_validator_1.IsEnum)(BudgetAction),
+    __metadata("design:type", String)
+], BudgetData.prototype, "budget_action", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], BudgetData.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], BudgetData.prototype, "amount", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], BudgetData.prototype, "currency", void 0);
 __decorate([
     (0, class_validator_1.IsDateString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], GoalData.prototype, "target_date", void 0);
+], BudgetData.prototype, "date", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(Priority),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], GoalData.prototype, "priority", void 0);
+], BudgetData.prototype, "priority", void 0);
+class CreditCardUpdateData {
+    name;
+    amount;
+    currency;
+    date;
+    institution_name;
+    credit_limit;
+    repayment_due_date;
+    card_identifier;
+}
+exports.CreditCardUpdateData = CreditCardUpdateData;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreditCardUpdateData.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
-], GoalData.prototype, "current_contribution", void 0);
+], CreditCardUpdateData.prototype, "amount", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreditCardUpdateData.prototype, "currency", void 0);
+__decorate([
+    (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreditCardUpdateData.prototype, "date", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreditCardUpdateData.prototype, "institution_name", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreditCardUpdateData.prototype, "credit_limit", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreditCardUpdateData.prototype, "repayment_due_date", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreditCardUpdateData.prototype, "card_identifier", void 0);
 class NullStatementData {
     error_message;
 }
