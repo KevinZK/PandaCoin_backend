@@ -24,7 +24,7 @@ let QwenProvider = class QwenProvider {
     logger;
     name = financial_parsing_provider_interface_1.PROVIDER_NAMES.QWEN;
     apiKey;
-    endpoint = 'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+    endpoint = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
     model = 'qwen-max';
     timeout = 10000;
     constructor(configService, logger) {

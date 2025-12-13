@@ -47,37 +47,10 @@ let AIServiceRouter = class AIServiceRouter {
         return [config.primary, ...config.fallbacks];
     }
     getRouteConfig(region) {
-        switch (region) {
-            case 'CN':
-                return {
-                    primary: this.qwenProvider,
-                    fallbacks: [this.openaiProvider],
-                };
-            case 'HK':
-            case 'MO':
-            case 'TW':
-                return {
-                    primary: this.qwenProvider,
-                    fallbacks: [this.geminiProvider, this.openaiProvider],
-                };
-            case 'US':
-            case 'CA':
-                return {
-                    primary: this.geminiProvider,
-                    fallbacks: [this.openaiProvider, this.qwenProvider],
-                };
-            case 'EU':
-                return {
-                    primary: this.geminiProvider,
-                    fallbacks: [this.openaiProvider],
-                };
-            case 'OTHER':
-            default:
-                return {
-                    primary: this.geminiProvider,
-                    fallbacks: [this.openaiProvider, this.qwenProvider],
-                };
-        }
+        return {
+            primary: this.qwenProvider,
+            fallbacks: [this.geminiProvider, this.openaiProvider],
+        };
     }
     getAllProviders() {
         return Array.from(this.providers.values());

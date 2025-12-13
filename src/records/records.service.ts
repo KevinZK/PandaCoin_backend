@@ -159,19 +159,24 @@ export class RecordsService {
 
     // 如果修改了金额或类型,需要回滚并重新计算余额
     if (dto.amount !== undefined || dto.type !== undefined) {
-      // 回滚原余额
-      await this.updateAccountBalance(
-        record.accountId,
-        record.type,
-        -Number(record.amount),
-      );
+      // 回滚原余额（仅当有 accountId 时）
+      if (record.accountId) {
+        await this.updateAccountBalance(
+          record.accountId,
+          record.type,
+          -Number(record.amount),
+        );
+      }
 
-      // 应用新余额
-      await this.updateAccountBalance(
-        dto.accountId || record.accountId,
-        dto.type || record.type,
-        dto.amount || Number(record.amount),
-      );
+      // 应用新余额（仅当有 accountId 时）
+      const newAccountId = dto.accountId || record.accountId;
+      if (newAccountId) {
+        await this.updateAccountBalance(
+          newAccountId,
+          dto.type || record.type,
+          dto.amount || Number(record.amount),
+        );
+      }
     }
 
     return this.prisma.record.update({
@@ -191,12 +196,14 @@ export class RecordsService {
   async remove(id: string, userId: string) {
     const record = await this.findOne(id, userId);
 
-    // 回滚账户余额
-    await this.updateAccountBalance(
-      record.accountId,
-      record.type,
-      -Number(record.amount),
-    );
+    // 回滚账户余额（仅当有 accountId 时）
+    if (record.accountId) {
+      await this.updateAccountBalance(
+        record.accountId,
+        record.type,
+        -Number(record.amount),
+      );
+    }
 
     return this.prisma.record.delete({
       where: { id },

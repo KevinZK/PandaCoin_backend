@@ -321,12 +321,14 @@ export class TransactionEngineService {
     };
 
     await this.prisma.$transaction(async (tx) => {
-      // 1. 回滚源账户
-      const sourceRollback = -this.calculateSourceChange(rec.type as TransactionType, rec.amount);
-      await tx.account.update({
-        where: { id: rec.accountId },
-        data: { balance: { increment: sourceRollback } },
-      });
+      // 1. 回滚源账户（仅当有 accountId 时）
+      if (rec.accountId) {
+        const sourceRollback = -this.calculateSourceChange(rec.type as TransactionType, rec.amount);
+        await tx.account.update({
+          where: { id: rec.accountId },
+          data: { balance: { increment: sourceRollback } },
+        });
+      }
 
       // 2. 回滚目标账户
       if (rec.targetAccountId) {

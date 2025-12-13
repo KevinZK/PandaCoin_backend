@@ -127,8 +127,13 @@ let RecordsService = class RecordsService {
     async update(id, userId, dto) {
         const record = await this.findOne(id, userId);
         if (dto.amount !== undefined || dto.type !== undefined) {
-            await this.updateAccountBalance(record.accountId, record.type, -Number(record.amount));
-            await this.updateAccountBalance(dto.accountId || record.accountId, dto.type || record.type, dto.amount || Number(record.amount));
+            if (record.accountId) {
+                await this.updateAccountBalance(record.accountId, record.type, -Number(record.amount));
+            }
+            const newAccountId = dto.accountId || record.accountId;
+            if (newAccountId) {
+                await this.updateAccountBalance(newAccountId, dto.type || record.type, dto.amount || Number(record.amount));
+            }
         }
         return this.prisma.record.update({
             where: { id },
@@ -144,7 +149,9 @@ let RecordsService = class RecordsService {
     }
     async remove(id, userId) {
         const record = await this.findOne(id, userId);
-        await this.updateAccountBalance(record.accountId, record.type, -Number(record.amount));
+        if (record.accountId) {
+            await this.updateAccountBalance(record.accountId, record.type, -Number(record.amount));
+        }
         return this.prisma.record.delete({
             where: { id },
         });

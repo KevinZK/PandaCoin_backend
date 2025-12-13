@@ -28,9 +28,12 @@ import { LoggerService } from '../../common/logger/logger.service';
 export class QwenProvider implements FinancialParsingProvider {
   readonly name = PROVIDER_NAMES.QWEN;
   private readonly apiKey: string;
-  // 国际版endpoint（如在国内使用，可改为 dashscope.aliyuncs.com）
+  // 国内版endpoint
   private readonly endpoint =
-    'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+    'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+  // 国际版endpoint（如在海外使用）
+  // private readonly endpoint =
+  //   'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
   private readonly model = 'qwen-max'; // 或使用 qwen-turbo 提高速度
   private readonly timeout = 10000;
 

@@ -14,6 +14,7 @@ import { FinancialModule } from './financial/financial.module';
 import { ScheduledModule } from './scheduled/scheduled.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { CreditCardsModule } from './credit-cards/credit-cards.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     ScheduledModule,
     BudgetsModule,
     TransactionsModule,
+    CreditCardsModule,
   ],
   controllers: [AppController],
   providers: [

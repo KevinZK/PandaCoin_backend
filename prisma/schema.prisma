@@ -24,10 +24,12 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // 关联关系
-  accounts  Account[]
-  records   Record[]
-  budgets   Budget[]
-  categories Category[]
+  accounts    Account[]
+  records     Record[]
+  budgets     Budget[]
+  categories  Category[]
+  creditCards CreditCard[]
+  creditCardTransactions CreditCardTransaction[]
 
   @@map("users")
 }
@@ -81,7 +83,7 @@ model Record {
   description String?    // 备注
   rawText     String?    @map("raw_text") // AI语音原始文本
   date        DateTime   @default(now()) // 记账日期
-  accountId   String     @map("account_id")
+  accountId   String?    @map("account_id") // 可选，信用卡消费无普通账户
   userId      String     @map("user_id")
   isConfirmed Boolean    @default(true) @map("is_confirmed") // 是否已确认(AI记账需要)
   confidence  Float?     // AI解析置信度
@@ -96,9 +98,13 @@ model Record {
   investmentId    String? @map("investment_id")
   quantity        Float?  // 买卖数量
   unitPrice       Float?  @map("unit_price") // 单价
+  
+  // 信用卡场景: 关联信用卡
+  creditCardId    String? @map("credit_card_id")
+  cardIdentifier  String? @map("card_identifier") // 卡片标识
 
   // 关联关系
-  account       Account     @relation("SourceAccount", fields: [accountId], references: [id], onDelete: Cascade)
+  account       Account?    @relation("SourceAccount", fields: [accountId], references: [id], onDelete: Cascade)
   targetAccount Account?    @relation("TargetAccount", fields: [targetAccountId], references: [id])
   investment    Investment? @relation(fields: [investmentId], references: [id])
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -106,6 +112,7 @@ model Record {
   @@index([userId, date])
   @@index([accountId])
   @@index([targetAccountId])
+  @@index([creditCardId])
   @@index([category])
   @@map("records")
 }
@@ -248,3 +255,58 @@ model ScheduledTaskLog {
   @@index([taskId])
   @@map("scheduled_task_logs")
 }
+
+// =============================================
+// 信用卡模型
+// =============================================
+model CreditCard {
+  id               String   @id @default(uuid())
+  name             String   // 卡片名称,如: 招商VISA卡
+  institutionName  String   @map("institution_name") // 发卡银行
+  cardIdentifier   String   @map("card_identifier") // 卡片标识(如尾号4位)
+  creditLimit      Float    @default(0) @map("credit_limit") // 信用额度
+  currentBalance   Float    @default(0) @map("current_balance") // 当前待还金额
+  repaymentDueDate String?  @map("repayment_due_date") // 还款日(每月几号)
+  currency         String   @default("CNY")
+  userId           String   @map("user_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // 关联关系
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions CreditCardTransaction[]
+
+  @@unique([userId, cardIdentifier])
+  @@index([userId])
+  @@map("credit_cards")
+}
+
+// =============================================
+// 信用卡消费记录模型
+// =============================================
+model CreditCardTransaction {
+  id            String     @id @default(uuid())
+  creditCardId  String     @map("credit_card_id")
+  amount        Float      // 消费金额（正数）
+  type          String     // EXPENSE(消费) 或 PAYMENT(还款)
+  category      String     // 消费分类
+  description   String?    // 消费描述
+  date          DateTime   @default(now())
+  recordId      String?    @map("record_id") // 关联主记录表
+  userId        String     @map("user_id")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  // 关联关系
+  creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([creditCardId])
+  @@index([userId])
+  @@index([date])
+  @@map("credit_card_transactions")
+}
+
+// 信用卡交易类型常量 (SQLite不支持enum,使用String)
+// EXPENSE = 消费（增加待还）
+// PAYMENT = 还款（减少待还）

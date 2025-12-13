@@ -23,6 +23,7 @@ const financial_module_1 = require("./financial/financial.module");
 const scheduled_module_1 = require("./scheduled/scheduled.module");
 const budgets_module_1 = require("./budgets/budgets.module");
 const transactions_module_1 = require("./transactions/transactions.module");
+const credit_cards_module_1 = require("./credit-cards/credit-cards.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,6 +43,7 @@ exports.AppModule = AppModule = __decorate([
             scheduled_module_1.ScheduledModule,
             budgets_module_1.BudgetsModule,
             transactions_module_1.TransactionsModule,
+            credit_cards_module_1.CreditCardsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

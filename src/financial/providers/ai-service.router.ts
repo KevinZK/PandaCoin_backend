@@ -78,6 +78,14 @@ export class AIServiceRouter {
    * - OTHER: Gemini → [OpenAI, Qwen]
    */
   private getRouteConfig(region: RegionCode): RouteConfig {
+    // 当前统一使用 Qwen 作为主 Provider
+    return {
+      primary: this.qwenProvider,
+      fallbacks: [this.geminiProvider, this.openaiProvider],
+    };
+
+    // 原区域路由配置（暂时禁用）
+    /*
     switch (region) {
       case 'CN':
         return {
@@ -113,6 +121,7 @@ export class AIServiceRouter {
           fallbacks: [this.openaiProvider, this.qwenProvider],
         };
     }
+    */
   }
 
   /**
