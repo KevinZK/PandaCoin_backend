@@ -12,16 +12,20 @@ export class RecordsService {
 
   // 创建记账记录
   async create(userId: string, dto: CreateRecordDto) {
-    // 查找账户
-    const account = await this.prisma.account.findFirst({
-      where: { id: dto.accountId, userId },
-    });
+    let account = null;
+    
+    // 如果指定了账户，验证账户存在
+    if (dto.accountId) {
+      account = await this.prisma.account.findFirst({
+        where: { id: dto.accountId, userId },
+      });
 
-    if (!account) {
-      throw new NotFoundException('账户不存在');
+      if (!account) {
+        throw new NotFoundException('账户不存在');
+      }
     }
 
-    // 创建记录
+    // 创建记录（accountId 可以为 null）
     const record = await this.prisma.record.create({
       data: {
         amount: dto.amount,
@@ -37,8 +41,10 @@ export class RecordsService {
       },
     });
 
-    // 更新账户余额
-    await this.updateAccountBalance(account.id, dto.type, dto.amount);
+    // 只有指定账户时才更新余额
+    if (account) {
+      await this.updateAccountBalance(account.id, dto.type, dto.amount);
+    }
 
     return record;
   }

@@ -184,6 +184,22 @@ export class TransactionEngineService {
       where: { userId },
     });
 
+    // 获取所有无账户的记录（accountId 为 null）
+    const allRecords = await this.prisma.record.findMany({
+      where: { userId },
+    });
+    const unaccountedRecords = allRecords.filter((r) => !r.accountId);
+
+    // 计算无账户记录的净影响（收入-支出）
+    let unaccountedBalance = 0;
+    unaccountedRecords.forEach((record) => {
+      if (record.type === 'INCOME') {
+        unaccountedBalance += record.amount;
+      } else if (record.type === 'EXPENSE') {
+        unaccountedBalance -= record.amount;
+      }
+    });
+
     // 计算各类资产
     let bankAccounts = 0;
     let cashAccounts = 0;
@@ -263,13 +279,14 @@ export class TransactionEngineService {
 
     const investmentValue = investmentDetails.reduce((sum, inv) => sum + inv.marketValue, 0);
 
-    // 汇总
+    // 汇总（包含无账户记录的净影响）
     const liquidAssets = bankAccounts + cashAccounts + digitalWalletAccounts + savingsAccounts;
     const fixedAssets = propertyValue + vehicleValue;
     const alternativeAssets = cryptoAccounts + retirementAccounts;
     const totalAssets = liquidAssets + fixedAssets + alternativeAssets + investmentValue + otherAssets;
     const totalLiabilities = creditCardDebt + loanDebt + mortgageDebt + otherLiabilities;
-    const netWorth = totalAssets - totalLiabilities;
+    // 净资产 = 账户资产 - 负债 + 无账户记录净额
+    const netWorth = totalAssets - totalLiabilities + unaccountedBalance;
 
     return {
       totalAssets,

@@ -21,11 +21,14 @@ let RecordsService = class RecordsService {
         this.aiService = aiService;
     }
     async create(userId, dto) {
-        const account = await this.prisma.account.findFirst({
-            where: { id: dto.accountId, userId },
-        });
-        if (!account) {
-            throw new common_1.NotFoundException('账户不存在');
+        let account = null;
+        if (dto.accountId) {
+            account = await this.prisma.account.findFirst({
+                where: { id: dto.accountId, userId },
+            });
+            if (!account) {
+                throw new common_1.NotFoundException('账户不存在');
+            }
         }
         const record = await this.prisma.record.create({
             data: {
@@ -41,7 +44,9 @@ let RecordsService = class RecordsService {
                 userId,
             },
         });
-        await this.updateAccountBalance(account.id, dto.type, dto.amount);
+        if (account) {
+            await this.updateAccountBalance(account.id, dto.type, dto.amount);
+        }
         return record;
     }
     async createFromVoice(userId, dto) {

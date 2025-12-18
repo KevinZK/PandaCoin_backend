@@ -12,8 +12,9 @@ export class CreateRecordDto {
   @IsString()
   category: string;
 
+  @IsOptional()
   @IsString()
-  accountId: string;
+  accountId?: string;
 
   @IsOptional()
   @IsString()

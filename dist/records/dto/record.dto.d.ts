@@ -2,7 +2,7 @@ export declare class CreateRecordDto {
     amount: number;
     type: 'EXPENSE' | 'INCOME' | 'TRANSFER';
     category: string;
-    accountId: string;
+    accountId?: string;
     description?: string;
     rawText?: string;
     date?: string;
