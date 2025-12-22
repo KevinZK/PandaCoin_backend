@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ScheduledTaskService } from './scheduled-task.service';
+import { BudgetsService } from '../budgets/budgets.service';
 import { LoggerService } from '../common/logger/logger.service';
 
 /**
@@ -13,6 +14,7 @@ export class ScheduledTaskExecutor {
 
   constructor(
     private readonly taskService: ScheduledTaskService,
+    private readonly budgetsService: BudgetsService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -75,5 +77,28 @@ export class ScheduledTaskExecutor {
     
     // 这里可以添加清理逻辑
     // 例如删除30天前的日志
+  }
+
+  /**
+   * 每月1日凌晨1点自动创建循环预算
+   * 将上个月 isRecurring=true 的预算复制到当月
+   */
+  @Cron('0 1 1 * *') // 每月1日 01:00
+  async autoCreateRecurringBudgets() {
+    this.logger.log('Starting auto-creation of recurring budgets', 'ScheduledTaskExecutor');
+
+    try {
+      const createdCount = await this.budgetsService.autoCreateRecurringBudgets();
+      this.logger.log(
+        `Auto-created ${createdCount} recurring budgets`,
+        'ScheduledTaskExecutor',
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to auto-create recurring budgets: ${error.message}`,
+        error.stack,
+        'ScheduledTaskExecutor',
+      );
+    }
   }
 }

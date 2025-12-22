@@ -149,19 +149,22 @@ model Category {
 // 预算模型
 // =============================================
 model Budget {
-  id        String   @id @default(uuid())
-  month     String   // 格式: YYYY-MM
-  category  String?  // 分类名称,null表示总预算
-  amount    Float  // 预算金额
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  month       String   // 格式: YYYY-MM
+  category    String?  // 分类名称,null表示总预算
+  name        String?  // 预算名称(用于区分同类预算)
+  amount      Float    // 预算金额
+  isRecurring Boolean  @default(false) @map("is_recurring") // 是否每月循环
+  userId      String   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // 关联关系
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, month, category])
   @@index([userId, month])
+  @@index([userId, isRecurring])
   @@map("budgets")
 }
 

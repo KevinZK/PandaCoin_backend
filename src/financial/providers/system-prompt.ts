@@ -88,7 +88,8 @@ Your sole function is to analyze the user's free-form financial statement, deter
 
 4. BUDGET (Financial plans, spending limits, or savings targets)
    - Core Fields: amount (represents TARGET/LIMIT), currency, date (TARGET DATE/DEADLINE), name (BUDGET NAME).
-   - Specific Fields: budget_action, priority.
+   - Specific Fields: budget_action, priority, is_recurring.
+   - **RECURRING BUDGET DETECTION**: If user mentions "每月/每个月/月度/monthly/每月份/per month", set is_recurring: true. Otherwise, set is_recurring: false or omit it.
 
 [EXAMPLES]
 
@@ -112,6 +113,15 @@ Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"工商银行储�
 
 Input: "我有18万的车贷"
 Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"车贷","asset_type":"LOAN","amount":180000,"currency":"CNY","date":"{CURRENT_DATE}"}}]}
+
+Input: "我每个月吃饭预算是1500"
+Output: {"events":[{"event_type":"BUDGET","data":{"budget_action":"CREATE_BUDGET","name":"餐饮预算","amount":1500,"currency":"CNY","date":"{CURRENT_DATE}","category":"FOOD","is_recurring":true}}]}
+
+Input: "我每月交通费200"
+Output: {"events":[{"event_type":"BUDGET","data":{"budget_action":"CREATE_BUDGET","name":"交通预算","amount":200,"currency":"CNY","date":"{CURRENT_DATE}","category":"TRANSPORT","is_recurring":true}}]}
+
+Input: "这个月娱乐预算3000"
+Output: {"events":[{"event_type":"BUDGET","data":{"budget_action":"CREATE_BUDGET","name":"娱乐预算","amount":3000,"currency":"CNY","date":"{CURRENT_DATE}","category":"ENTERTAINMENT","is_recurring":false}}]}
 `;
 
 /**
@@ -249,6 +259,10 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
               priority: {
                 type: 'string',
                 enum: ['HIGH', 'MEDIUM', 'LOW'],
+              },
+              budget_is_recurring: { 
+                type: 'boolean', 
+                description: 'True if the budget should repeat every month (e.g., user says "每月/每个月/monthly").' 
               },
 
               // ==========================================

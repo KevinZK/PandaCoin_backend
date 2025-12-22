@@ -36,13 +36,15 @@ export class BudgetsService {
       data: {
         month: dto.month,
         category: dto.category || null,
+        name: dto.name || null,
         amount: dto.amount,
+        isRecurring: dto.isRecurring || false,
         userId,
       },
     });
 
     this.logger.log(
-      `Created budget: ${dto.month} ${dto.category || '总预算'} = ¥${dto.amount}`,
+      `Created budget: ${dto.month} ${dto.category || '总预算'} = ¥${dto.amount} (recurring: ${dto.isRecurring || false})`,
       'BudgetsService',
     );
 
@@ -86,18 +88,48 @@ export class BudgetsService {
 
   /**
    * 更新预算金额
+   * 如果是循环预算，同时更新当前月份及未来月份的相同预算
    */
   async update(userId: string, id: string, dto: UpdateBudgetDto) {
-    await this.findOne(userId, id);
+    const budget = await this.findOne(userId, id);
 
-    return this.prisma.budget.update({
+    // 更新当前预算
+    const updatedBudget = await this.prisma.budget.update({
       where: { id },
-      data: { amount: dto.amount },
+      data: {
+        amount: dto.amount ?? budget.amount,
+        name: dto.name ?? budget.name,
+        isRecurring: dto.isRecurring ?? budget.isRecurring,
+      },
     });
+
+    // 如果是循环预算，更新未来月份的相同预算
+    if (updatedBudget.isRecurring && budget.category) {
+      const currentMonth = budget.month;
+      await this.prisma.budget.updateMany({
+        where: {
+          userId,
+          category: budget.category,
+          isRecurring: true,
+          month: { gt: currentMonth },
+        },
+        data: {
+          amount: dto.amount ?? budget.amount,
+          name: dto.name ?? budget.name,
+        },
+      });
+
+      this.logger.log(
+        `Updated recurring budget and future months: ${budget.category}`,
+        'BudgetsService',
+      );
+    }
+
+    return updatedBudget;
   }
 
   /**
-   * 删除预算
+   * 删除预算（仅删除当月）
    */
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
@@ -105,6 +137,35 @@ export class BudgetsService {
     return this.prisma.budget.delete({
       where: { id },
     });
+  }
+
+  /**
+   * 取消循环预算（删除当月及所有未来月份的相同分类循环预算）
+   */
+  async cancelRecurring(userId: string, id: string) {
+    const budget = await this.findOne(userId, id);
+
+    if (!budget.isRecurring) {
+      // 如果不是循环预算，直接删除
+      return this.remove(userId, id);
+    }
+
+    // 删除当前及所有未来月份的相同分类循环预算
+    const result = await this.prisma.budget.deleteMany({
+      where: {
+        userId,
+        category: budget.category,
+        isRecurring: true,
+        month: { gte: budget.month },
+      },
+    });
+
+    this.logger.log(
+      `Cancelled recurring budget: ${budget.category}, deleted ${result.count} budgets`,
+      'BudgetsService',
+    );
+
+    return { deletedCount: result.count };
   }
 
   /**
@@ -161,11 +222,13 @@ export class BudgetsService {
         id: budget.id,
         month: budget.month,
         category: budget.category,
+        name: budget.name,
         budgetAmount: budget.amount,
         spentAmount,
         remainingAmount,
         usagePercent: Math.round(usagePercent * 10) / 10,
         isOverBudget: spentAmount > budget.amount,
+        isRecurring: budget.isRecurring,
       });
 
       if (isTotal) {
@@ -204,7 +267,7 @@ export class BudgetsService {
   }
 
   /**
-   * 复制上月预算到当月
+   * 复制上月预算到当月（手动触发，复制所有预算）
    */
   async copyFromPreviousMonth(userId: string): Promise<number> {
     const now = new Date();
@@ -229,7 +292,9 @@ export class BudgetsService {
         await this.create(userId, {
           month: currentMonth,
           category: budget.category || undefined,
+          name: budget.name || undefined,
           amount: budget.amount,
+          isRecurring: budget.isRecurring,
         });
         copiedCount++;
       } catch (error) {
@@ -246,5 +311,66 @@ export class BudgetsService {
     );
 
     return copiedCount;
+  }
+
+  /**
+   * 自动复制循环预算到新月份（定时任务调用）
+   * 仅复制 isRecurring = true 的预算
+   */
+  async autoCreateRecurringBudgets(): Promise<number> {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // 计算上个月
+    const lastMonth = new Date(now);
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const previousMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+
+    // 获取上月所有循环预算
+    const recurringBudgets = await this.prisma.budget.findMany({
+      where: {
+        month: previousMonth,
+        isRecurring: true,
+      },
+    });
+
+    if (recurringBudgets.length === 0) {
+      this.logger.log('No recurring budgets to copy', 'BudgetsService');
+      return 0;
+    }
+
+    let createdCount = 0;
+
+    for (const budget of recurringBudgets) {
+      // 检查当月是否已存在
+      const existing = await this.prisma.budget.findFirst({
+        where: {
+          userId: budget.userId,
+          month: currentMonth,
+          category: budget.category,
+        },
+      });
+
+      if (!existing) {
+        await this.prisma.budget.create({
+          data: {
+            month: currentMonth,
+            category: budget.category,
+            name: budget.name,
+            amount: budget.amount,
+            isRecurring: true,
+            userId: budget.userId,
+          },
+        });
+        createdCount++;
+      }
+    }
+
+    this.logger.log(
+      `Auto-created ${createdCount} recurring budgets for ${currentMonth}`,
+      'BudgetsService',
+    );
+
+    return createdCount;
   }
 }

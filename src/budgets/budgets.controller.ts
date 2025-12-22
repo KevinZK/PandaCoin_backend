@@ -116,7 +116,7 @@ export class BudgetsController {
   }
 
   /**
-   * 删除预算
+   * 删除预算（仅删除当月）
    * DELETE /api/budgets/:id
    */
   @Delete(':id')
@@ -124,5 +124,16 @@ export class BudgetsController {
     const userId = req.user?.sub || req.user?.id;
     await this.budgetsService.remove(userId, id);
     return ResponseDto.success(null, '预算已删除');
+  }
+
+  /**
+   * 取消循环预算（删除当月及所有未来月份的相同分类循环预算）
+   * DELETE /api/budgets/:id/cancel-recurring
+   */
+  @Delete(':id/cancel-recurring')
+  async cancelRecurring(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user?.sub || req.user?.id;
+    const result = await this.budgetsService.cancelRecurring(userId, id);
+    return ResponseDto.success(result, '循环预算已取消');
   }
 }
