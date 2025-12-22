@@ -39,12 +39,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   
   const port = process.env.PORT || 3000;
-  const host = process.env.HOST || '0.0.0.0'; // 监听所有网络接口，允许真机访问
-  await app.listen(port, host);
+  await app.listen(port);
   
-  logger.log(`\n🚀 PandaCoin API running on:`, 'Bootstrap');
-  logger.log(`   Local:   http://localhost:${port}/api`, 'Bootstrap');
-  logger.log(`   Network: http://${host}:${port}/api`, 'Bootstrap');
+  logger.log(`\n🚀 PandaCoin API running on: http://localhost:${port}/api`, 'Bootstrap');
   logger.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`, 'Bootstrap');
   logger.log(`📝 Log Level: ${process.env.LOG_LEVEL || 'debug'}\n`, 'Bootstrap');
 }

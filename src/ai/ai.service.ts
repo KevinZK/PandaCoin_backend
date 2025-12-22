@@ -46,10 +46,8 @@ export class AiService {
         return result;
       }
 
-      // 使用稳定的 gemini-2.5-flash 模型
-      // 文档：https://ai.google.dev/gemini-api/docs/text-generation
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,10 +60,6 @@ export class AiService {
             generationConfig: {
               temperature: 0.1,
               maxOutputTokens: 1024,
-              // 禁用思考功能以加快响应（简单任务不需要思考）
-              thinkingConfig: {
-                thinkingBudget: 0,
-              },
             },
           }),
         },
