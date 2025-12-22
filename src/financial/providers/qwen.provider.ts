@@ -19,7 +19,7 @@ export class QwenProvider implements FinancialParsingProvider {
   readonly name = PROVIDER_NAMES.QWEN;
   private readonly apiKey: string;
   private readonly endpoint =
-    'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+    'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
   private readonly model = 'qwen-max';
   private readonly timeout = 8000;
 
