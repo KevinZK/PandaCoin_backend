@@ -70,17 +70,21 @@ Your sole function is to analyze the user's free-form financial statement, deter
    category ENUMS: "FOOD", "TRANSPORT", "SHOPPING", "HOUSING", "ENTERTAINMENT", "INCOME_SALARY", "LOAN_REPAYMENT", "ASSET_SALE", "FEES_AND_TAXES", "SUBSCRIPTION", "OTHER" ... (and other standard categories)
 
 2. ASSET_UPDATE (Change in holdings, value, or account balances)
-   - Core Fields: amount (represents TOTAL VALUE/BALANCE), currency, date (record date), name (ASSET NAME).
+   - Core Fields: amount (represents TOTAL VALUE/BALANCE), currency, date (record date), name (ASSET NAME - REQUIRED).
    - Specific Fields: asset_type, institution_name, quantity, cost_basis, cost_basis_currency, interest_rate_apy, maturity_date, projected_value, location, repayment_amount, repayment_schedule, card_identifier.
+   
+   **CRITICAL**: The 'name' field is MANDATORY for ASSET_UPDATE. If user doesn't specify an asset name, you MUST generate one by combining: "{institution_name} + {asset_type_display_name}" (e.g., "招商银行信用卡", "工商银行储蓄账户", "比特币"). NEVER leave 'name' empty or omit it.
    
    asset_type ENUMS: "BANK", "INVESTMENT", "CASH", "CREDIT_CARD", "DIGITAL_WALLET", "LOAN", "MORTGAGE", "SAVINGS", "RETIREMENT", "CRYPTO", "PROPERTY", "VEHICLE", "OTHER_ASSET", "OTHER_LIABILITY"
    
 3. CREDIT_CARD_UPDATE (Dedicated update for credit card configuration: limit, due dates, and current balance)
    // Use this event type to set the card's COMPLETE configuration in ONE event.
    // NOTE: 'amount' field represents credit limit. 'outstanding_balance' represents current debt to be paid.
-   - Core Fields: amount (credit limit), currency, date (record date), name (Card Name).
+   - Core Fields: amount (credit limit), currency, date (record date), name (Card Name - REQUIRED).
    - Specific Fields: institution_name, repayment_due_date (Day of Month, e.g. "10"), card_identifier, outstanding_balance (current debt amount).
    - **FORBIDDEN FIELDS**: transaction_type, category, source_account, target_account, repayment_schedule, note. (These belong to TRANSACTION).
+   
+   **CRITICAL**: The 'name' field is MANDATORY. Generate it as "{institution_name}信用卡" (e.g., "招商银行信用卡", "花旗银行信用卡").
 
 4. BUDGET (Financial plans, spending limits, or savings targets)
    - Core Fields: amount (represents TARGET/LIMIT), currency, date (TARGET DATE/DEADLINE), name (BUDGET NAME).
@@ -92,16 +96,22 @@ Input: "我今天吃饭消费了160然后还买了一瓶水39"
 Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","amount":160,"currency":"CNY","date":"{CURRENT_DATE}","category":"FOOD","note":"吃饭"}},{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","amount":39,"currency":"CNY","date":"{CURRENT_DATE}","category":"SHOPPING","note":"买一瓶水"}}]}
 
 Input: "我有一张招商银行信用卡尾号2323他的额度为84,000目前消费金额为325"
-Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"institution_name":"招商银行","amount":84000,"outstanding_balance":325,"currency":"CNY","card_identifier":"2323","date":"{CURRENT_DATE}"}}]}
+Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"name":"招商银行信用卡","institution_name":"招商银行","amount":84000,"outstanding_balance":325,"currency":"CNY","card_identifier":"2323","date":"{CURRENT_DATE}"}}]}
 
 Input: "我有一张招商银行信用卡尾号2323他的额度为84,000目前消费金额为325他的还款日是2月10号"
-Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"institution_name":"招商银行","amount":84000,"outstanding_balance":325,"currency":"CNY","card_identifier":"2323","repayment_due_date":"10","date":"{CURRENT_DATE}"}}]}
+Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"name":"招商银行信用卡","institution_name":"招商银行","amount":84000,"outstanding_balance":325,"currency":"CNY","card_identifier":"2323","repayment_due_date":"10","date":"{CURRENT_DATE}"}}]}
 
 Input: "我花期银行信用卡额度53000美金，还款时间是每个月4号今天我用它消费了53美金"
-Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"institution_name":"花旗","amount":53000,"currency":"USD","repayment_due_date":"04","date":"{CURRENT_DATE}"}},{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","source_account":"花旗信用卡","amount":53,"currency":"USD","date":"{CURRENT_DATE}","category":"OTHER","note":"消费"}}]}
+Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"name":"花旗银行信用卡","institution_name":"花旗","amount":53000,"currency":"USD","repayment_due_date":"04","date":"{CURRENT_DATE}"}},{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","source_account":"花旗信用卡","amount":53,"currency":"USD","date":"{CURRENT_DATE}","category":"OTHER","note":"消费"}}]}
 
 Input: "我的花旗银行信用卡尾号1234今天我用它消费了53美金"
-Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","source_account":"花旗信用卡","amount":53,"currency":"USD","date":"{CURRENT_DATE}","category":"OTHER","note":"消费","card_identifier":"1234"}},{"event_type":"ASSET_UPDATE","data":{"asset_type":"CREDIT_CARD","institution_name":"花旗","amount":53,"currency":"USD","date":"{CURRENT_DATE}","card_identifier":"1234"}}]}
+Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","source_account":"花旗信用卡","amount":53,"currency":"USD","date":"{CURRENT_DATE}","category":"OTHER","note":"消费","card_identifier":"1234"}},{"event_type":"ASSET_UPDATE","data":{"name":"花旗银行信用卡","asset_type":"CREDIT_CARD","institution_name":"花旗","amount":53,"currency":"USD","date":"{CURRENT_DATE}","card_identifier":"1234"}}]}
+
+Input: "我工商银行有63000块钱"
+Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"工商银行储蓄账户","asset_type":"BANK","institution_name":"工商银行","amount":63000,"currency":"CNY","date":"{CURRENT_DATE}"}}]}
+
+Input: "我有18万的车贷"
+Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"车贷","asset_type":"LOAN","amount":180000,"currency":"CNY","date":"{CURRENT_DATE}"}}]}
 `;
 
 /**
