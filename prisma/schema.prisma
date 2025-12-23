@@ -22,6 +22,10 @@ model User {
   country   String?  // 用户国家/地区代码 (ISO 3166-1 alpha-2)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // 默认支出账户设置 (全局只有一个)
+  defaultExpenseAccountId   String? @map("default_expense_account_id")   // 账户或信用卡的 ID
+  defaultExpenseAccountType String? @map("default_expense_account_type") // "ACCOUNT" 或 "CREDIT_CARD"
 
   // 关联关系
   accounts    Account[]
