@@ -6,8 +6,8 @@ export class CreateRecordDto {
   @Type(() => Number)
   amount: number;
 
-  @IsEnum(['EXPENSE', 'INCOME', 'TRANSFER'])
-  type: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  @IsEnum(['EXPENSE', 'INCOME', 'TRANSFER', 'PAYMENT'])
+  type: 'EXPENSE' | 'INCOME' | 'TRANSFER' | 'PAYMENT';
 
   @IsString()
   category: string;
@@ -52,8 +52,8 @@ export class UpdateRecordDto {
   amount?: number;
 
   @IsOptional()
-  @IsEnum(['EXPENSE', 'INCOME', 'TRANSFER'])
-  type?: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  @IsEnum(['EXPENSE', 'INCOME', 'TRANSFER', 'PAYMENT'])
+  type?: 'EXPENSE' | 'INCOME' | 'TRANSFER' | 'PAYMENT';
 
   @IsOptional()
   @IsString()

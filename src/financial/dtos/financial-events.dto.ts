@@ -28,17 +28,31 @@ export enum TransactionType {
 }
 
 export enum Category {
+  // Expense categories
   FOOD = 'FOOD',
   TRANSPORT = 'TRANSPORT',
   SHOPPING = 'SHOPPING',
   HOUSING = 'HOUSING',
   ENTERTAINMENT = 'ENTERTAINMENT',
-  INCOME_SALARY = 'INCOME_SALARY',
-  LOAN_REPAYMENT = 'LOAN_REPAYMENT',
-  ASSET_SALE = 'ASSET_SALE',
-  FEES_AND_TAXES = 'FEES_AND_TAXES',
+  HEALTH = 'HEALTH',
+  EDUCATION = 'EDUCATION',
+  COMMUNICATION = 'COMMUNICATION',
+  SPORTS = 'SPORTS',
+  BEAUTY = 'BEAUTY',
+  TRAVEL = 'TRAVEL',
+  PETS = 'PETS',
   SUBSCRIPTION = 'SUBSCRIPTION',
+  FEES_AND_TAXES = 'FEES_AND_TAXES',
+  LOAN_REPAYMENT = 'LOAN_REPAYMENT',
   OTHER = 'OTHER',
+  // Income categories
+  INCOME_SALARY = 'INCOME_SALARY',
+  INCOME_BONUS = 'INCOME_BONUS',
+  INCOME_INVESTMENT = 'INCOME_INVESTMENT',
+  INCOME_FREELANCE = 'INCOME_FREELANCE',
+  INCOME_GIFT = 'INCOME_GIFT',
+  ASSET_SALE = 'ASSET_SALE',
+  INCOME_OTHER = 'INCOME_OTHER',
 }
 
 export enum AssetType {
@@ -221,6 +235,14 @@ export class BudgetData {
   @IsEnum(Priority)
   @IsOptional()
   priority?: Priority;
+
+  @IsBoolean()
+  @IsOptional()
+  is_recurring?: boolean;
+
+  @IsEnum(Category)
+  @IsOptional()
+  category?: Category;
 }
 
 export class CreditCardUpdateData {
