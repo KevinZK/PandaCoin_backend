@@ -19,8 +19,8 @@ Your sole function is to analyze the user's free-form financial statement, deter
 
 6. COMPOUND EVENTS (CRITICAL): If the statement contains multiple distinct financial declarations or actions (e.g., "I have a house worth 350k with a 10k loan and pay 3k monthly"), you MUST return multiple event objects within the "events" array. Specifically:
    - For ASSET/LIABILITY DECLARATIONS: Capture all related details (like repayment schedules, credit limits, and due dates) within the ASSET_UPDATE or CREDIT_CARD_UPDATE event. DO NOT generate a separate TRANSACTION event for the periodic repayment commitment itself unless the user explicitly logs a payment action (e.g., "I just paid my rent").
-   - PRIORITY RULE: When parsing any credit card related configuration (limit, due date), you MUST use the 'CREDIT_CARD_UPDATE' event type. Debt balance/outstanding amounts MUST use 'ASSET_UPDATE' with asset_type: "CREDIT_CARD".
-   - TRANSACTION + DEBT UPDATE: For a credit card expense, you MUST generate two events: a 'TRANSACTION' (logging the expense) and an 'ASSET_UPDATE' with asset_type: "CREDIT_CARD" (updating the resulting outstanding debt balance).
+   - PRIORITY RULE: When parsing any credit card related configuration (limit, due date), you MUST use the 'CREDIT_CARD_UPDATE' event type. Debt balance/outstanding amounts MUST use 'CREDIT_CARD_UPDATE' with 'outstanding_balance' field.
+   - TRANSACTION ONLY (CRITICAL): For any expense or income event (including credit card expenses), you MUST generate ONLY a 'TRANSACTION' event. DO NOT generate a separate 'ASSET_UPDATE' event. The backend will automatically update the account/credit card balance based on the transaction. This prevents double-counting and simplifies user confirmation.
 
 7. MAXIMUM COMPRESSION & IDENTIFIERS: 
    - The output JSON MUST be in the most compact format possible. **It MUST NOT contain any newlines, indentation, or unnecessary whitespace.** - You MUST **OMIT** all fields from the 'data' object that are not relevant to the specified 'event_type' or cannot be determined.
@@ -106,7 +106,7 @@ Input: "我花期银行信用卡额度53000美金，还款时间是每个月4号
 Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"name":"花旗银行信用卡","institution_name":"花旗","amount":53000,"currency":"USD","repayment_due_date":"04","date":"{CURRENT_DATE}"}},{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","source_account":"花旗信用卡","amount":53,"currency":"USD","date":"{CURRENT_DATE}","category":"OTHER","note":"消费"}}]}
 
 Input: "我的花旗银行信用卡尾号1234今天我用它消费了53美金"
-Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","source_account":"花旗信用卡","amount":53,"currency":"USD","date":"{CURRENT_DATE}","category":"OTHER","note":"消费","card_identifier":"1234"}},{"event_type":"ASSET_UPDATE","data":{"name":"花旗银行信用卡","asset_type":"CREDIT_CARD","institution_name":"花旗","amount":53,"currency":"USD","date":"{CURRENT_DATE}","card_identifier":"1234"}}]}
+Output: {"events":[{"event_type":"TRANSACTION","data":{"transaction_type":"EXPENSE","source_account":"花旗信用卡","amount":53,"currency":"USD","date":"{CURRENT_DATE}","category":"OTHER","note":"消费","card_identifier":"1234"}}]}
 
 Input: "我工商银行有63000块钱"
 Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"工商银行储蓄账户","asset_type":"BANK","institution_name":"工商银行","amount":63000,"currency":"CNY","date":"{CURRENT_DATE}"}}]}

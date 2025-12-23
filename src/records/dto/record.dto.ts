@@ -18,6 +18,14 @@ export class CreateRecordDto {
 
   @IsOptional()
   @IsString()
+  creditCardId?: string;  // 关联的信用卡ID
+
+  @IsOptional()
+  @IsString()
+  cardIdentifier?: string;  // 信用卡尾号（用于匹配信用卡）
+
+  @IsOptional()
+  @IsString()
   description?: string;
 
   @IsOptional()

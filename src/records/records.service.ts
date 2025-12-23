@@ -13,6 +13,7 @@ export class RecordsService {
   // 创建记账记录
   async create(userId: string, dto: CreateRecordDto) {
     let account = null;
+    let creditCard = null;
     
     // 如果指定了账户，验证账户存在
     if (dto.accountId) {
@@ -25,7 +26,21 @@ export class RecordsService {
       }
     }
 
-    // 创建记录（accountId 可以为 null）
+    // 如果指定了信用卡ID，验证信用卡存在
+    if (dto.creditCardId) {
+      creditCard = await this.prisma.creditCard.findFirst({
+        where: { id: dto.creditCardId, userId },
+      });
+    }
+    
+    // 如果只有卡片标识（尾号），通过尾号查找信用卡
+    if (!creditCard && dto.cardIdentifier) {
+      creditCard = await this.prisma.creditCard.findFirst({
+        where: { userId, cardIdentifier: dto.cardIdentifier },
+      });
+    }
+
+    // 创建记录
     const record = await this.prisma.record.create({
       data: {
         amount: dto.amount,
@@ -37,12 +52,18 @@ export class RecordsService {
         isConfirmed: dto.isConfirmed ?? true,
         confidence: dto.confidence,
         accountId: dto.accountId,
+        creditCardId: creditCard?.id,
+        cardIdentifier: dto.cardIdentifier,
         userId,
       },
     });
 
-    // 只有指定账户时才更新余额
-    if (account) {
+    // 更新余额
+    if (creditCard) {
+      // 信用卡消费：增加待还金额
+      await this.updateCreditCardBalance(creditCard.id, dto.type, dto.amount);
+    } else if (account) {
+      // 普通账户：更新余额
       await this.updateAccountBalance(account.id, dto.type, dto.amount);
     }
 
@@ -202,8 +223,16 @@ export class RecordsService {
   async remove(id: string, userId: string) {
     const record = await this.findOne(id, userId);
 
-    // 回滚账户余额（仅当有 accountId 时）
-    if (record.accountId) {
+    // 回滚余额
+    if (record.creditCardId) {
+      // 回滚信用卡余额
+      await this.updateCreditCardBalance(
+        record.creditCardId,
+        record.type,
+        -Number(record.amount),
+      );
+    } else if (record.accountId) {
+      // 回滚账户余额
       await this.updateAccountBalance(
         record.accountId,
         record.type,
@@ -240,6 +269,35 @@ export class RecordsService {
       where: { id: accountId },
       data: {
         balance: Number(account.balance) + balanceChange,
+      },
+    });
+  }
+
+  // 更新信用卡余额的辅助方法
+  private async updateCreditCardBalance(
+    creditCardId: string,
+    type: string,
+    amount: number,
+  ) {
+    const creditCard = await this.prisma.creditCard.findUnique({
+      where: { id: creditCardId },
+    });
+
+    if (!creditCard) return;
+
+    let balanceChange = 0;
+    if (type === 'EXPENSE') {
+      // 信用卡消费：增加待还金额
+      balanceChange = amount;
+    } else if (type === 'INCOME' || type === 'PAYMENT') {
+      // 信用卡还款：减少待还金额
+      balanceChange = -amount;
+    }
+
+    await this.prisma.creditCard.update({
+      where: { id: creditCardId },
+      data: {
+        currentBalance: Math.max(0, Number(creditCard.currentBalance) + balanceChange),
       },
     });
   }
