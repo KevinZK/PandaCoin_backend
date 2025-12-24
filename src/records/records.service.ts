@@ -161,6 +161,13 @@ export class RecordsService {
             type: true,
           },
         },
+        targetAccount: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
       },
       orderBy: { date: 'desc' },
     });
@@ -170,7 +177,22 @@ export class RecordsService {
   async findOne(id: string, userId: string) {
     const record = await this.prisma.record.findFirst({
       where: { id, userId },
-      include: { account: true },
+      include: {
+        account: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        targetAccount: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+      },
     });
 
     if (!record) {
