@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min, IsBoolean, IsEnum } from 'class-validator';
 
 export class CreateCreditCardDto {
   @IsString()
@@ -21,6 +21,23 @@ export class CreateCreditCardDto {
   @IsOptional()
   @IsString()
   currency?: string;
+
+  // 自动还款配置
+  @IsOptional()
+  @IsBoolean()
+  autoRepayment?: boolean;
+
+  @IsOptional()
+  @IsEnum(['FULL', 'MIN'])
+  repaymentType?: 'FULL' | 'MIN'; // 全额还款 / 最低还款
+
+  @IsOptional()
+  @IsString()
+  sourceAccountId?: string; // 扣款来源账户 ID
+
+  @IsOptional()
+  @IsString()
+  sourceAccountName?: string; // 扣款来源账户名称 (用于 AI 解析)
 }
 
 export class UpdateCreditCardDto {
@@ -52,4 +69,17 @@ export class UpdateCreditCardDto {
   @IsOptional()
   @IsString()
   currency?: string;
+
+  // 自动还款配置
+  @IsOptional()
+  @IsBoolean()
+  autoRepayment?: boolean;
+
+  @IsOptional()
+  @IsEnum(['FULL', 'MIN'])
+  repaymentType?: 'FULL' | 'MIN';
+
+  @IsOptional()
+  @IsString()
+  sourceAccountId?: string;
 }

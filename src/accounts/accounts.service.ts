@@ -9,6 +9,16 @@ export class AccountsService {
   async create(userId: string, dto: CreateAccountDto) {
     // 使用事务确保账户创建和记账记录原子性
     return this.prisma.$transaction(async (tx) => {
+      // 计算月供（如果未提供但有足够信息）
+      let monthlyPayment = dto.monthlyPayment;
+      if (!monthlyPayment && dto.loanTermMonths && dto.interestRate !== undefined) {
+        monthlyPayment = this.calculateMonthlyPayment(
+          Math.abs(dto.balance),
+          dto.interestRate,
+          dto.loanTermMonths,
+        );
+      }
+
       // 1. 创建账户
       const account = await tx.account.create({
         data: {
@@ -17,6 +27,13 @@ export class AccountsService {
           balance: dto.balance,
           currency: dto.currency || 'CNY',
           userId,
+          // 贷款专用字段
+          loanTermMonths: dto.loanTermMonths,
+          interestRate: dto.interestRate,
+          monthlyPayment: monthlyPayment,
+          repaymentDay: dto.repaymentDay,
+          loanStartDate: dto.loanStartDate ? new Date(dto.loanStartDate) : null,
+          institutionName: dto.institutionName,
         },
       });
 
@@ -39,8 +56,84 @@ export class AccountsService {
         });
       }
 
+      // 3. 如果启用了自动还款，创建 AutoPayment 配置
+      if (dto.autoRepayment && dto.repaymentDay) {
+        const paymentType = dto.type === 'MORTGAGE' ? 'MORTGAGE' : 'LOAN';
+        
+        // 查找扣款来源账户
+        let sourceAccountId = dto.sourceAccountId;
+        if (!sourceAccountId && dto.sourceAccountName) {
+          const sourceAccount = await tx.account.findFirst({
+            where: { userId, name: { contains: dto.sourceAccountName } },
+          });
+          sourceAccountId = sourceAccount?.id;
+        }
+
+        await tx.autoPayment.create({
+          data: {
+            name: `${dto.name}还款`,
+            paymentType,
+            liabilityAccountId: account.id,
+            fixedAmount: monthlyPayment,
+            dayOfMonth: dto.repaymentDay,
+            executeTime: '08:00',
+            reminderDaysBefore: 2,
+            insufficientFundsPolicy: 'TRY_NEXT_SOURCE',
+            isEnabled: true,
+            nextExecuteAt: this.calculateNextExecuteTime(dto.repaymentDay),
+            userId,
+            // 创建来源账户配置
+            sources: sourceAccountId
+              ? {
+                  create: {
+                    accountId: sourceAccountId,
+                    priority: 1,
+                  },
+                }
+              : undefined,
+          },
+        });
+      }
+
       return account;
     });
+  }
+
+  /**
+   * 计算等额本息月供
+   */
+  private calculateMonthlyPayment(
+    principal: number,
+    annualRate: number,
+    termMonths: number,
+  ): number {
+    if (annualRate === 0) {
+      return principal / termMonths;
+    }
+
+    const monthlyRate = annualRate / 100 / 12;
+    const factor = Math.pow(1 + monthlyRate, termMonths);
+    const monthlyPayment = (principal * monthlyRate * factor) / (factor - 1);
+
+    return Math.round(monthlyPayment * 100) / 100;
+  }
+
+  /**
+   * 计算下次执行时间
+   */
+  private calculateNextExecuteTime(dayOfMonth: number): Date {
+    const now = new Date();
+    let next = new Date(now.getFullYear(), now.getMonth(), dayOfMonth, 8, 0, 0, 0);
+
+    if (next <= now) {
+      next.setMonth(next.getMonth() + 1);
+    }
+
+    if (next.getDate() !== dayOfMonth) {
+      next.setDate(0);
+    }
+
+    return next;
   }
 
   async findAll(userId: string) {
@@ -70,6 +163,12 @@ export class AccountsService {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.balance !== undefined && { balance: dto.balance }),
+        ...(dto.loanTermMonths !== undefined && { loanTermMonths: dto.loanTermMonths }),
+        ...(dto.interestRate !== undefined && { interestRate: dto.interestRate }),
+        ...(dto.monthlyPayment !== undefined && { monthlyPayment: dto.monthlyPayment }),
+        ...(dto.repaymentDay !== undefined && { repaymentDay: dto.repaymentDay }),
+        ...(dto.loanStartDate && { loanStartDate: new Date(dto.loanStartDate) }),
+        ...(dto.institutionName !== undefined && { institutionName: dto.institutionName }),
       },
     });
   }

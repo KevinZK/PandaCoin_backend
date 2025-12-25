@@ -15,6 +15,7 @@ import { ScheduledModule } from './scheduled/scheduled.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { CreditCardsModule } from './credit-cards/credit-cards.module';
+import { AutoPaymentsModule } from './auto-payments/auto-payments.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { CreditCardsModule } from './credit-cards/credit-cards.module';
     BudgetsModule,
     TransactionsModule,
     CreditCardsModule,
+    AutoPaymentsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -210,6 +210,32 @@ export class AssetUpdateData {
   @IsString()
   @IsOptional()
   card_identifier?: string;
+
+  // 贷款专用字段 (LOAN / MORTGAGE)
+  @IsNumber()
+  @IsOptional()
+  loan_term_months?: number; // 贷款期限(月)
+
+  @IsNumber()
+  @IsOptional()
+  interest_rate?: number; // 年利率 (%)
+
+  @IsNumber()
+  @IsOptional()
+  monthly_payment?: number; // 月供金额
+
+  @IsNumber()
+  @IsOptional()
+  repayment_day?: number; // 还款日 (1-28)
+
+  // 自动还款配置
+  @IsBoolean()
+  @IsOptional()
+  auto_repayment?: boolean; // 是否启用自动还款
+
+  @IsString()
+  @IsOptional()
+  source_account?: string; // 扣款来源账户名称
 }
 
 export class BudgetData {
@@ -245,6 +271,11 @@ export class BudgetData {
   category?: Category;
 }
 
+export enum RepaymentType {
+  FULL = 'FULL',
+  MIN = 'MIN',
+}
+
 export class CreditCardUpdateData {
   @IsString()
   @IsOptional()
@@ -277,6 +308,23 @@ export class CreditCardUpdateData {
   @IsString()
   @IsOptional()
   card_identifier?: string;
+
+  @IsNumber()
+  @IsOptional()
+  outstanding_balance?: number; // 当前待还金额
+
+  // 自动还款配置
+  @IsBoolean()
+  @IsOptional()
+  auto_repayment?: boolean; // 是否启用自动还款
+
+  @IsEnum(RepaymentType)
+  @IsOptional()
+  repayment_type?: RepaymentType; // 全额还款 / 最低还款
+
+  @IsString()
+  @IsOptional()
+  source_account?: string; // 扣款来源账户名称
 }
 
 export class NullStatementData {

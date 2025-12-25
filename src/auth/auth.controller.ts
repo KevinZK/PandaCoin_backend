@@ -25,7 +25,7 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser() user: any) {
-    const fullUser = await this.authService.validateUser(user.sub);
+    const fullUser = await this.authService.validateUser(user.id);
     return ResponseDto.success(fullUser, '获取用户信息成功');
   }
 
@@ -40,7 +40,7 @@ export class AuthController {
     @Body() dto: { accountId: string; accountType: 'ACCOUNT' | 'CREDIT_CARD' },
   ) {
     const result = await this.authService.setDefaultExpenseAccount(
-      user.sub,
+      user.id,  // 使用 user.id 而不是 user.sub
       dto.accountId,
       dto.accountType,
     );
@@ -54,7 +54,7 @@ export class AuthController {
   @Get('default-expense-account')
   @UseGuards(JwtAuthGuard)
   async getDefaultExpenseAccount(@CurrentUser() user: any) {
-    const result = await this.authService.getDefaultExpenseAccount(user.sub);
+    const result = await this.authService.getDefaultExpenseAccount(user.id);
     return ResponseDto.success(result);
   }
 
@@ -65,7 +65,7 @@ export class AuthController {
   @Delete('default-expense-account')
   @UseGuards(JwtAuthGuard)
   async clearDefaultExpenseAccount(@CurrentUser() user: any) {
-    const result = await this.authService.clearDefaultExpenseAccount(user.sub);
+    const result = await this.authService.clearDefaultExpenseAccount(user.id);
     return ResponseDto.success(result, '默认支出账户已清除');
   }
 
@@ -82,7 +82,7 @@ export class AuthController {
     if (!institutionName) {
       return ResponseDto.success({ matches: [], recommended: null });
     }
-    const result = await this.authService.getRecommendedAccount(user.sub, institutionName);
+    const result = await this.authService.getRecommendedAccount(user.id, institutionName);
     return ResponseDto.success(result);
   }
 }

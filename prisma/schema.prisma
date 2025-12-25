@@ -34,6 +34,7 @@ model User {
   categories  Category[]
   creditCards CreditCard[]
   creditCardTransactions CreditCardTransaction[]
+  autoPayments AutoPayment[]
 
   @@map("users")
 }
@@ -50,11 +51,21 @@ model Account {
   userId    String      @map("user_id")
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
+  
+  // 贷款专用字段 (type = LOAN 或 MORTGAGE 时使用)
+  loanTermMonths    Int?     @map("loan_term_months")    // 贷款期限(月)
+  interestRate      Float?   @map("interest_rate")       // 年利率 (%)
+  monthlyPayment    Float?   @map("monthly_payment")     // 月供金额
+  repaymentDay      Int?     @map("repayment_day")       // 还款日 (每月几号, 1-28)
+  loanStartDate     DateTime? @map("loan_start_date")    // 贷款开始日期
+  institutionName   String?  @map("institution_name")    // 贷款机构名称
 
   // 关联关系
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   sourceRecords  Record[] @relation("SourceAccount") // 作为源账户的记录
   targetRecords  Record[] @relation("TargetAccount") // 作为目标账户的记录
+  autoPaymentsAsTarget AutoPayment[] @relation("PaymentTarget") // 作为还款目标
+  autoPaymentSources AutoPaymentSource[] @relation("AutoPaymentSources") // 作为自动扣款来源
 
   @@index([userId])
   @@map("accounts")
@@ -282,6 +293,7 @@ model CreditCard {
   // 关联关系
   user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions CreditCardTransaction[]
+  autoPayments AutoPayment[]
 
   @@unique([userId, cardIdentifier])
   @@index([userId])
@@ -317,3 +329,106 @@ model CreditCardTransaction {
 // 信用卡交易类型常量 (SQLite不支持enum,使用String)
 // EXPENSE = 消费（增加待还）
 // PAYMENT = 还款（减少待还）
+
+// =============================================
+// 自动扣款配置模型
+// =============================================
+model AutoPayment {
+  id                String   @id @default(uuid())
+  name              String   // 扣款名称: "招行信用卡还款", "房贷还款"
+  
+  // 扣款类型
+  // CREDIT_CARD_FULL: 信用卡全额还款
+  // CREDIT_CARD_MIN: 信用卡最低还款
+  // LOAN: 贷款还款
+  // MORTGAGE: 房贷还款
+  // SUBSCRIPTION: 订阅扣款
+  paymentType       String   @map("payment_type")
+  
+  // 关联目标 (二选一)
+  creditCardId      String?  @map("credit_card_id")   // 关联信用卡
+  liabilityAccountId String? @map("liability_account_id") // 关联贷款账户
+  
+  // 金额配置
+  fixedAmount       Float?   @map("fixed_amount")      // 固定金额(贷款/订阅)
+  // 信用卡还款时: null 表示动态获取当期账单金额
+  
+  // 调度配置
+  dayOfMonth        Int      @map("day_of_month")      // 每月几号执行 (1-28)
+  executeTime       String   @default("08:00") @map("execute_time") // 执行时间
+  
+  // 提前提醒
+  reminderDaysBefore Int     @default(2) @map("reminder_days_before") // 提前几天提醒
+  
+  // 余额不足处理策略
+  // NOTIFY: 仅通知用户
+  // RETRY_NEXT_DAY: 第二天重试
+  // PARTIAL_PAY: 部分还款(信用卡最低还款)
+  // TRY_NEXT_SOURCE: 尝试下一个来源账户（多来源时使用）
+  // SKIP: 跳过本次
+  insufficientFundsPolicy String @default("TRY_NEXT_SOURCE") @map("insufficient_funds_policy")
+  
+  // 贷款进度跟踪
+  totalPeriods      Int?     @map("total_periods")       // 总期数
+  completedPeriods  Int      @default(0) @map("completed_periods") // 已还期数
+  startDate         DateTime? @map("start_date")         // 开始日期
+  
+  // 状态
+  isEnabled         Boolean  @default(true) @map("is_enabled")
+  lastExecutedAt    DateTime? @map("last_executed_at")
+  nextExecuteAt     DateTime? @map("next_execute_at")
+  
+  // 用户
+  userId            String   @map("user_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  // 关联
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCard        CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  liabilityAccount  Account? @relation("PaymentTarget", fields: [liabilityAccountId], references: [id], onDelete: SetNull)
+  logs              AutoPaymentLog[]
+  sources           AutoPaymentSource[]  // 多个来源账户（按优先级排序）
+  
+  @@index([userId])
+  @@index([nextExecuteAt, isEnabled])
+  @@map("auto_payments")
+}
+
+// 自动扣款来源账户（支持多来源和优先级）
+model AutoPaymentSource {
+  id              String   @id @default(uuid())
+  autoPaymentId   String   @map("auto_payment_id")
+  accountId       String   @map("account_id")
+  priority        Int      @default(1)  // 优先级: 1=最高优先
+  
+  // 关联
+  autoPayment     AutoPayment @relation(fields: [autoPaymentId], references: [id], onDelete: Cascade)
+  account         Account     @relation("AutoPaymentSources", fields: [accountId], references: [id], onDelete: Cascade)
+  
+  @@unique([autoPaymentId, accountId])  // 同一个扣款配置中每个账户只能出现一次
+  @@index([autoPaymentId])
+  @@map("auto_payment_sources")
+}
+
+// 自动扣款执行日志
+model AutoPaymentLog {
+  id              String   @id @default(uuid())
+  autoPaymentId   String   @map("auto_payment_id")
+  
+  // 执行结果: SUCCESS, FAILED, INSUFFICIENT_FUNDS, PARTIAL, SKIPPED
+  status          String
+  amount          Float    // 实际扣款金额
+  sourceBalance   Float?   @map("source_balance") // 执行时来源账户余额
+  
+  // 关联记录
+  recordId        String?  @map("record_id") // 生成的记账记录
+  
+  message         String?  // 执行消息/错误信息
+  executedAt      DateTime @default(now()) @map("executed_at")
+  
+  autoPayment     AutoPayment @relation(fields: [autoPaymentId], references: [id], onDelete: Cascade)
+  
+  @@index([autoPaymentId])
+  @@map("auto_payment_logs")
+}

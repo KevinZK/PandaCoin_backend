@@ -65,6 +65,28 @@ Your sole function is to analyze the user's free-form financial statement, deter
     - TRANSFER: Moving money between own accounts (bank to bank, etc.)
     - PAYMENT: Specifically for repaying debts (credit card payment, loan repayment, etc.)
 
+16. LOAN KEYWORDS (CRITICAL):
+    - "车贷/汽车贷款" → asset_type = "LOAN", name = "车贷"
+    - "房贷/住房贷款/按揭" → asset_type = "MORTGAGE", name = "房贷"
+    - "贷款X年/X年期/期限X年" → Extract years, convert to loan_term_months (years * 12)
+    - "利息/利率/年利率X%" → Extract to interest_rate (number only, e.g., 2.88)
+    - "0利息/免息/零利率" → interest_rate = 0
+    - "每月X号还款/还款日X号/X号扣款" → repayment_day = X
+    - "月供/每月还款X元/每个月还X" → monthly_payment = X
+    - "从XX扣款/从XX还款/用XX还" → source_account = XX, auto_repayment = true
+
+17. LOAN CALCULATION HINT:
+    - If user provides principal + term + interest_rate but NOT monthly_payment, 
+      the backend will calculate using the Equal Principal and Interest formula.
+    - You SHOULD still include all provided data fields.
+    - For loans, 'amount' represents the TOTAL PRINCIPAL (remaining balance as negative)
+
+18. AUTO REPAYMENT CONFIGURATION:
+    - If user mentions automatic repayment from a specific account, set:
+      - auto_repayment: true
+      - source_account: the account name mentioned
+    - repayment_type (for credit cards): "FULL" for 全额还款, "MIN" for 最低还款
+
 [UNIFIED SCHEMA]
 {
   "events": [
@@ -92,6 +114,7 @@ Your sole function is to analyze the user's free-form financial statement, deter
 2. ASSET_UPDATE (Change in holdings, value, or account balances)
    - Core Fields: amount (represents TOTAL VALUE/BALANCE), currency, date (record date), name (ASSET NAME - REQUIRED).
    - Specific Fields: asset_type, institution_name, quantity, cost_basis, cost_basis_currency, interest_rate_apy, maturity_date, projected_value, location, repayment_amount, repayment_schedule, card_identifier.
+   - Loan Fields (for LOAN/MORTGAGE): loan_term_months, interest_rate, monthly_payment, repayment_day, auto_repayment, source_account.
    
    **CRITICAL**: The 'name' field is MANDATORY for ASSET_UPDATE. If user doesn't specify an asset name, you MUST generate one by combining: "{institution_name} + {asset_type_display_name}" (e.g., "招商银行信用卡", "工商银行储蓄账户", "比特币"). NEVER leave 'name' empty or omit it.
    
@@ -102,7 +125,8 @@ Your sole function is to analyze the user's free-form financial statement, deter
    // NOTE: 'amount' field represents credit limit. 'outstanding_balance' represents current debt to be paid.
    - Core Fields: amount (credit limit), currency, date (record date), name (Card Name - REQUIRED).
    - Specific Fields: institution_name, repayment_due_date (Day of Month, e.g. "10"), card_identifier, outstanding_balance (current debt amount).
-   - **FORBIDDEN FIELDS**: transaction_type, category, source_account, target_account, repayment_schedule, note. (These belong to TRANSACTION).
+   - Auto Repayment Fields: auto_repayment (boolean), repayment_type ("FULL" or "MIN"), source_account (扣款来源账户).
+   - **FORBIDDEN FIELDS**: transaction_type, category, target_account, repayment_schedule, note. (These belong to TRANSACTION).
    
    **CRITICAL**: The 'name' field is MANDATORY. Generate it as "{institution_name}信用卡" (e.g., "招商银行信用卡", "花旗银行信用卡").
 
@@ -194,6 +218,25 @@ Output: {"events":[{"event_type":"BUDGET","data":{"budget_action":"CREATE_BUDGET
 
 Input: "这个月娱乐预算3000"
 Output: {"events":[{"event_type":"BUDGET","data":{"budget_action":"CREATE_BUDGET","name":"娱乐预算","amount":3000,"currency":"CNY","date":"{CURRENT_DATE}","category":"ENTERTAINMENT","is_recurring":false}}]}
+
+// === LOAN EXAMPLES ===
+Input: "我有一张尾号为1234的招商银行信用卡，每个月10号还款"
+Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"name":"招商银行信用卡","institution_name":"招商银行","card_identifier":"1234","repayment_due_date":"10","date":"{CURRENT_DATE}"}}]}
+
+Input: "我的车贷19万，贷款5年0利息。每个月6号还款3030元"
+Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"车贷","asset_type":"LOAN","amount":190000,"currency":"CNY","loan_term_months":60,"interest_rate":0,"monthly_payment":3030,"repayment_day":6,"date":"{CURRENT_DATE}"}}]}
+
+Input: "我的车贷18万贷款3年利息2.88%"
+Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"车贷","asset_type":"LOAN","amount":180000,"currency":"CNY","loan_term_months":36,"interest_rate":2.88,"date":"{CURRENT_DATE}"}}]}
+
+Input: "我的房贷100万，贷款30年，利息2.8%"
+Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"房贷","asset_type":"MORTGAGE","amount":1000000,"currency":"CNY","loan_term_months":360,"interest_rate":2.8,"date":"{CURRENT_DATE}"}}]}
+
+Input: "房贷每个月25号还款8500从工商银行扣款"
+Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"房贷","asset_type":"MORTGAGE","monthly_payment":8500,"repayment_day":25,"auto_repayment":true,"source_account":"工商银行","date":"{CURRENT_DATE}"}}]}
+
+Input: "我有一张招行信用卡尾号5678，每月15号自动全额还款从建设银行扣"
+Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"name":"招商银行信用卡","institution_name":"招商银行","card_identifier":"5678","repayment_due_date":"15","auto_repayment":true,"repayment_type":"FULL","source_account":"建设银行","date":"{CURRENT_DATE}"}}]}
 `;
 
 /**
@@ -322,6 +365,16 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
                 type: 'string',
                 enum: ['WEEKLY', 'MONTHLY', 'YEARLY'],
               },
+              
+              // ==========================================
+              // 4.1 LOAN SPECIFIC FIELDS
+              // ==========================================
+              loan_term_months: { type: 'number', description: 'Loan term in months (e.g., 36 for 3 years)' },
+              interest_rate: { type: 'number', description: 'Annual interest rate in percentage (e.g., 2.88)' },
+              monthly_payment: { type: 'number', description: 'Monthly payment amount' },
+              repayment_day: { type: 'number', description: 'Day of month for repayment (1-28)' },
+              auto_repayment: { type: 'boolean', description: 'Whether auto repayment is enabled' },
+              repayment_type: { type: 'string', enum: ['FULL', 'MIN'], description: 'For credit cards: FULL or MIN repayment' },
               
               // ==========================================
               // 5. BUDGET SPECIFIC FIELDS
