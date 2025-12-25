@@ -332,7 +332,7 @@ export class AutoPaymentsService {
           await tx.record.create({
             data: {
               amount: deductAmount,
-              type: 'REPAYMENT',
+              type: 'PAYMENT',  // 还款类型
               category: 'LOAN_REPAYMENT',
               description: `[自动还款] ${payment.name} (来源: ${account.name})`,
               accountId: account.id,
