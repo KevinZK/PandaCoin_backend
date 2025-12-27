@@ -95,6 +95,8 @@ export class AuthService {
         updatedAt: true,
         defaultExpenseAccountId: true,
         defaultExpenseAccountType: true,
+        defaultIncomeAccountId: true,
+        defaultIncomeAccountType: true,
       },
     });
   }
@@ -178,6 +180,70 @@ export class AuthService {
       });
       return creditCard ? { type: 'CREDIT_CARD', creditCard } : null;
     }
+  }
+
+  /**
+   * 设置默认收入账户（收入只能进入账户，不能进入信用卡）
+   */
+  async setDefaultIncomeAccount(
+    userId: string,
+    accountId: string,
+  ) {
+    // 验证账户存在
+    const account = await this.prisma.account.findFirst({
+      where: { id: accountId, userId },
+    });
+    if (!account) {
+      throw new NotFoundException('账户不存在');
+    }
+
+    // 更新用户默认收入账户
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        defaultIncomeAccountId: accountId,
+        defaultIncomeAccountType: 'ACCOUNT',
+      },
+    });
+
+    return { accountId, accountType: 'ACCOUNT' };
+  }
+
+  /**
+   * 清除默认收入账户
+   */
+  async clearDefaultIncomeAccount(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        defaultIncomeAccountId: null,
+        defaultIncomeAccountType: null,
+      },
+    });
+
+    return { cleared: true };
+  }
+
+  /**
+   * 获取默认收入账户详情
+   */
+  async getDefaultIncomeAccount(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        defaultIncomeAccountId: true,
+        defaultIncomeAccountType: true,
+      },
+    });
+
+    if (!user?.defaultIncomeAccountId) {
+      return null;
+    }
+
+    const account = await this.prisma.account.findUnique({
+      where: { id: user.defaultIncomeAccountId },
+    });
+    return account ? { type: 'ACCOUNT', account } : null;
   }
 
   /**

@@ -70,6 +70,45 @@ export class AuthController {
   }
 
   /**
+   * 设置默认收入账户
+   * PUT /api/auth/default-income-account
+   */
+  @Put('default-income-account')
+  @UseGuards(JwtAuthGuard)
+  async setDefaultIncomeAccount(
+    @CurrentUser() user: any,
+    @Body() dto: { accountId: string },
+  ) {
+    const result = await this.authService.setDefaultIncomeAccount(
+      user.id,
+      dto.accountId,
+    );
+    return ResponseDto.success(result, '默认收入账户设置成功');
+  }
+
+  /**
+   * 获取默认收入账户
+   * GET /api/auth/default-income-account
+   */
+  @Get('default-income-account')
+  @UseGuards(JwtAuthGuard)
+  async getDefaultIncomeAccount(@CurrentUser() user: any) {
+    const result = await this.authService.getDefaultIncomeAccount(user.id);
+    return ResponseDto.success(result);
+  }
+
+  /**
+   * 清除默认收入账户
+   * DELETE /api/auth/default-income-account
+   */
+  @Delete('default-income-account')
+  @UseGuards(JwtAuthGuard)
+  async clearDefaultIncomeAccount(@CurrentUser() user: any) {
+    const result = await this.authService.clearDefaultIncomeAccount(user.id);
+    return ResponseDto.success(result, '默认收入账户已清除');
+  }
+
+  /**
    * 获取推荐账户（基于机构名称）
    * GET /api/auth/recommended-account?institutionName=招商
    */

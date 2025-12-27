@@ -27,6 +27,10 @@ model User {
   defaultExpenseAccountId   String? @map("default_expense_account_id")   // 账户或信用卡的 ID
   defaultExpenseAccountType String? @map("default_expense_account_type") // "ACCOUNT" 或 "CREDIT_CARD"
 
+  // 默认收入账户设置（收入只能进入账户，不能进入信用卡）
+  defaultIncomeAccountId   String? @map("default_income_account_id")
+  defaultIncomeAccountType String? @map("default_income_account_type") // 目前只支持 "ACCOUNT"
+
   // 关联关系
   accounts    Account[]
   records     Record[]
