@@ -39,6 +39,7 @@ model User {
   creditCards CreditCard[]
   creditCardTransactions CreditCardTransaction[]
   autoPayments AutoPayment[]
+  autoIncomes AutoIncome[]
 
   @@map("users")
 }
@@ -70,6 +71,7 @@ model Account {
   targetRecords  Record[] @relation("TargetAccount") // 作为目标账户的记录
   autoPaymentsAsTarget AutoPayment[] @relation("PaymentTarget") // 作为还款目标
   autoPaymentSources AutoPaymentSource[] @relation("AutoPaymentSources") // 作为自动扣款来源
+  autoIncomes    AutoIncome[] @relation("IncomeTarget") // 作为自动入账目标
 
   @@index([userId])
   @@map("accounts")
@@ -432,7 +434,85 @@ model AutoPaymentLog {
   executedAt      DateTime @default(now()) @map("executed_at")
   
   autoPayment     AutoPayment @relation(fields: [autoPaymentId], references: [id], onDelete: Cascade)
-  
+
   @@index([autoPaymentId])
   @@map("auto_payment_logs")
+}
+
+// =============================================
+// 自动入账配置模型
+// =============================================
+model AutoIncome {
+  id                String   @id @default(uuid())
+  name              String   // 入账名称: "工资", "公积金", "养老金"
+
+  // 入账类型
+  // SALARY: 工资
+  // HOUSING_FUND: 公积金
+  // PENSION: 养老金/退休金
+  // RENTAL: 租金收入
+  // INVESTMENT_RETURN: 投资收益
+  // OTHER: 其他固定收入
+  incomeType        String   @map("income_type")
+
+  // 入账金额
+  amount            Float
+
+  // 入账目标账户
+  targetAccountId   String   @map("target_account_id")
+
+  // 分类
+  category          String   @default("工资")
+
+  // 调度配置
+  dayOfMonth        Int      @map("day_of_month")       // 每月几号 (1-28)
+  executeTime       String   @default("09:00") @map("execute_time")
+
+  // 提前提醒
+  reminderDaysBefore Int     @default(1) @map("reminder_days_before")
+
+  // 状态
+  isEnabled         Boolean  @default(true) @map("is_enabled")
+  lastExecutedAt    DateTime? @map("last_executed_at")
+  nextExecuteAt     DateTime? @map("next_execute_at")
+
+  // 用户
+  userId            String   @map("user_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetAccount     Account  @relation("IncomeTarget", fields: [targetAccountId], references: [id], onDelete: Cascade)
+  logs              AutoIncomeLog[]
+
+  @@index([userId])
+  @@index([nextExecuteAt, isEnabled])
+  @@map("auto_incomes")
+}
+
+// 自动入账类型常量 (SQLite不支持enum,使用String)
+// SALARY = 工资
+// HOUSING_FUND = 公积金
+// PENSION = 养老金/退休金
+// RENTAL = 租金收入
+// INVESTMENT_RETURN = 投资收益
+// OTHER = 其他固定收入
+
+// =============================================
+// 自动入账执行日志
+// =============================================
+model AutoIncomeLog {
+  id              String   @id @default(uuid())
+  autoIncomeId    String   @map("auto_income_id")
+  status          String   // SUCCESS, SKIPPED
+  amount          Float    // 入账金额
+  recordId        String?  @map("record_id") // 生成的记账记录ID
+  message         String?
+  executedAt      DateTime @default(now()) @map("executed_at")
+
+  autoIncome      AutoIncome @relation(fields: [autoIncomeId], references: [id], onDelete: Cascade)
+
+  @@index([autoIncomeId])
+  @@map("auto_income_logs")
 }
