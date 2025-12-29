@@ -49,6 +49,51 @@ export class RecordsController {
     return this.recordsService.getStatistics(user.id, period);
   }
 
+  // 获取趋势统计
+  @Get('statistics/trend')
+  getTrendStatistics(
+    @CurrentUser() user: any,
+    @Query('period') period?: 'daily' | 'weekly' | 'monthly',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.recordsService.getTrendStatistics(user.id, period, startDate, endDate);
+  }
+
+  // 获取环比对比统计
+  @Get('statistics/comparison')
+  getComparisonStatistics(
+    @CurrentUser() user: any,
+    @Query('month') month?: string,
+  ) {
+    return this.recordsService.getComparisonStatistics(user.id, month);
+  }
+
+  // 获取收入分析
+  @Get('statistics/income')
+  getIncomeAnalysis(
+    @CurrentUser() user: any,
+    @Query('period') period?: 'month' | 'year',
+  ) {
+    return this.recordsService.getIncomeAnalysis(user.id, period);
+  }
+
+  // 获取财务健康度
+  @Get('statistics/health')
+  getFinancialHealth(@CurrentUser() user: any) {
+    return this.recordsService.getFinancialHealth(user.id);
+  }
+
+  // 获取分类趋势
+  @Get('statistics/category-trend')
+  getCategoryTrend(
+    @CurrentUser() user: any,
+    @Query('category') category: string,
+    @Query('months') months?: string,
+  ) {
+    return this.recordsService.getCategoryTrend(user.id, category, months ? parseInt(months) : 6);
+  }
+
   // 获取单条记录
   @Get(':id')
   findOne(@CurrentUser() user: any, @Param('id') id: string) {
