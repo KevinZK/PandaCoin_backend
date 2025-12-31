@@ -16,10 +16,15 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String   // bcrypt加密后的密码
+  password  String?  // bcrypt加密后的密码 (Apple登录用户可为空)
   name      String?
   avatar    String?
   country   String?  // 用户国家/地区代码 (ISO 3166-1 alpha-2)
+
+  // Apple Sign In 字段
+  appleId   String?  @unique @map("apple_id") // Apple 用户唯一标识 (sub)
+  authType  String   @default("email") @map("auth_type") // "email" | "apple"
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   

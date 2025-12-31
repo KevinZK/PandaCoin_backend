@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Put, Delete, UseGuards, Query } from '@nes
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AppleLoginDto } from './dto/apple-login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { ResponseDto } from '../common/dto/response.dto';
@@ -20,6 +21,20 @@ export class AuthController {
   async login(@Body() dto: LoginDto) {
     const result = await this.authService.login(dto);
     return ResponseDto.success(result, '登录成功');
+  }
+
+  @Post('apple')
+  async appleLogin(@Body() dto: AppleLoginDto) {
+    const result = await this.authService.appleLogin(dto);
+    const message = result.isNewUser ? '注册成功' : '登录成功';
+    return ResponseDto.success(result, message);
+  }
+
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  async deleteAccount(@CurrentUser() user: any) {
+    const result = await this.authService.deleteAccount(user.id);
+    return ResponseDto.success(result, '账号已删除');
   }
 
   @Get('me')

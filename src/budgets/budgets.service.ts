@@ -316,32 +316,41 @@ export class BudgetsService {
   /**
    * 自动复制循环预算到新月份（定时任务调用）
    * 仅复制 isRecurring = true 的预算
+   *
+   * 修复：查询所有历史月份的循环预算，避免链式中断
+   * 如果用户在某个月删除了循环预算，下个月仍会从更早的月份恢复
    */
   async autoCreateRecurringBudgets(): Promise<number> {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    // 计算上个月
-    const lastMonth = new Date(now);
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const previousMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
-
-    // 获取上月所有循环预算
-    const recurringBudgets = await this.prisma.budget.findMany({
+    // 获取所有用户最新的循环预算配置（按用户+分类分组，取最近月份的）
+    // 这样即使某个月被删除，也能从更早的月份恢复
+    const allRecurringBudgets = await this.prisma.budget.findMany({
       where: {
-        month: previousMonth,
         isRecurring: true,
+        month: { lt: currentMonth },  // 只查询当前月份之前的
       },
+      orderBy: { month: 'desc' },  // 按月份降序，最新的在前
     });
 
-    if (recurringBudgets.length === 0) {
+    if (allRecurringBudgets.length === 0) {
       this.logger.log('No recurring budgets to copy', 'BudgetsService');
       return 0;
     }
 
+    // 按 userId + category 分组，只保留最新的一条
+    const latestBudgetMap = new Map<string, typeof allRecurringBudgets[0]>();
+    for (const budget of allRecurringBudgets) {
+      const key = `${budget.userId}:${budget.category || '__TOTAL__'}`;
+      if (!latestBudgetMap.has(key)) {
+        latestBudgetMap.set(key, budget);
+      }
+    }
+
     let createdCount = 0;
 
-    for (const budget of recurringBudgets) {
+    for (const budget of latestBudgetMap.values()) {
       // 检查当月是否已存在
       const existing = await this.prisma.budget.findFirst({
         where: {
@@ -363,6 +372,11 @@ export class BudgetsService {
           },
         });
         createdCount++;
+
+        this.logger.debug(
+          `Created recurring budget for user ${budget.userId}: ${budget.category || '总预算'} = ¥${budget.amount}`,
+          'BudgetsService',
+        );
       }
     }
 
@@ -370,6 +384,69 @@ export class BudgetsService {
       `Auto-created ${createdCount} recurring budgets for ${currentMonth}`,
       'BudgetsService',
     );
+
+    return createdCount;
+  }
+
+  /**
+   * 手动触发当月循环预算检查（供用户进入预算页面时调用）
+   * 确保即使错过了定时任务，用户也能看到循环预算
+   */
+  async ensureRecurringBudgetsForCurrentMonth(userId: string): Promise<number> {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // 获取该用户最新的循环预算配置
+    const userRecurringBudgets = await this.prisma.budget.findMany({
+      where: {
+        userId,
+        isRecurring: true,
+        month: { lt: currentMonth },
+      },
+      orderBy: { month: 'desc' },
+    });
+
+    // 按 category 分组，只保留最新的
+    const latestBudgetMap = new Map<string, typeof userRecurringBudgets[0]>();
+    for (const budget of userRecurringBudgets) {
+      const key = budget.category || '__TOTAL__';
+      if (!latestBudgetMap.has(key)) {
+        latestBudgetMap.set(key, budget);
+      }
+    }
+
+    let createdCount = 0;
+
+    for (const budget of latestBudgetMap.values()) {
+      const existing = await this.prisma.budget.findFirst({
+        where: {
+          userId,
+          month: currentMonth,
+          category: budget.category,
+        },
+      });
+
+      if (!existing) {
+        await this.prisma.budget.create({
+          data: {
+            month: currentMonth,
+            category: budget.category,
+            name: budget.name,
+            amount: budget.amount,
+            isRecurring: true,
+            userId,
+          },
+        });
+        createdCount++;
+      }
+    }
+
+    if (createdCount > 0) {
+      this.logger.log(
+        `Ensured ${createdCount} recurring budgets for user ${userId} in ${currentMonth}`,
+        'BudgetsService',
+      );
+    }
 
     return createdCount;
   }

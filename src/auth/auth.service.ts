@@ -1,9 +1,14 @@
 import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import verifyAppleToken from 'verify-apple-id-token';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AppleLoginDto } from './dto/apple-login.dto';
+
+// Apple App Bundle ID
+const APPLE_CLIENT_ID = 'kevin.zuo.PandaCoin';
 
 @Injectable()
 export class AuthService {
@@ -61,6 +66,11 @@ export class AuthService {
       throw new UnauthorizedException('邮箱或密码错误');
     }
 
+    // Apple 用户没有密码，不能使用邮箱密码登录
+    if (!user.password) {
+      throw new UnauthorizedException('该账号使用 Apple 登录，请使用 Apple Sign In');
+    }
+
     // 验证密码
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
@@ -81,6 +91,131 @@ export class AuthService {
       },
       ...tokens,
     };
+  }
+
+  /**
+   * Apple Sign In 登录/注册
+   * 如果用户存在则登录，否则创建新用户
+   */
+  async appleLogin(dto: AppleLoginDto) {
+    // 使用 Apple 公钥验证 identity token
+    let jwtClaims: any;
+    try {
+      jwtClaims = await verifyAppleToken({
+        idToken: dto.identityToken,
+        clientId: APPLE_CLIENT_ID,
+      });
+
+      if (!jwtClaims || !jwtClaims.sub) {
+        throw new UnauthorizedException('无效的 Apple identity token');
+      }
+    } catch (error) {
+      console.error('Apple token verification failed:', error);
+      throw new UnauthorizedException('Apple 登录验证失败: ' + (error.message || '未知错误'));
+    }
+
+    const appleUserId = jwtClaims.sub;
+    const tokenEmail = jwtClaims.email;
+
+    // 查找是否存在已绑定此 Apple ID 的用户
+    let user = await this.prisma.user.findUnique({
+      where: { appleId: appleUserId },
+    });
+
+    if (user) {
+      // 已存在用户，直接登录
+      const tokens = await this.generateTokens(user.id, user.email);
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+        ...tokens,
+        isNewUser: false,
+      };
+    }
+
+    // 新用户注册
+    const email = dto.email || tokenEmail || `${appleUserId}@privaterelay.appleid.com`;
+
+    // 检查邮箱是否已被其他账号使用
+    const existingEmailUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingEmailUser) {
+      // 邮箱已存在但未绑定 Apple ID，绑定到此账号
+      user = await this.prisma.user.update({
+        where: { id: existingEmailUser.id },
+        data: {
+          appleId: appleUserId,
+          authType: 'apple',
+        },
+      });
+    } else {
+      // 创建新用户
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          appleId: appleUserId,
+          authType: 'apple',
+          name: dto.fullName || null,
+        },
+      });
+    }
+
+    const tokens = await this.generateTokens(user.id, user.email);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      ...tokens,
+      isNewUser: !existingEmailUser,
+    };
+  }
+
+  /**
+   * 删除用户账号及所有关联数据
+   */
+  async deleteAccount(userId: string) {
+    // 验证用户存在
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    // 删除用户及所有关联数据（Prisma cascade 会自动处理）
+    await this.prisma.$transaction(async (tx) => {
+      // 删除记录
+      await tx.record.deleteMany({ where: { userId } });
+      // 删除账户
+      await tx.account.deleteMany({ where: { userId } });
+      // 删除信用卡
+      await tx.creditCard.deleteMany({ where: { userId } });
+      // 删除预算
+      await tx.budget.deleteMany({ where: { userId } });
+      // 删除自动还款
+      await tx.autoPayment.deleteMany({ where: { userId } });
+      // 删除自动入账
+      await tx.autoIncome.deleteMany({ where: { userId } });
+      // 最后删除用户
+      await tx.user.delete({ where: { id: userId } });
+    });
+
+    return { deleted: true };
   }
 
   async validateUser(userId: string) {

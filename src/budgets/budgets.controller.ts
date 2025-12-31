@@ -56,10 +56,13 @@ export class BudgetsController {
   /**
    * 获取当前月份预算进度
    * GET /api/budgets/progress/current
+   * 自动确保循环预算已创建（防止定时任务遗漏）
    */
   @Get('progress/current')
   async getCurrentProgress(@Req() req: any) {
     const userId = req.user?.sub || req.user?.id;
+    // 确保当月循环预算已创建（防止定时任务遗漏或用户月中加入）
+    await this.budgetsService.ensureRecurringBudgetsForCurrentMonth(userId);
     const progress = await this.budgetsService.getCurrentMonthProgress(userId);
     return ResponseDto.success(progress);
   }
