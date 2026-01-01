@@ -45,8 +45,44 @@ model User {
   creditCardTransactions CreditCardTransaction[]
   autoPayments AutoPayment[]
   autoIncomes AutoIncome[]
+  subscription Subscription?
 
   @@map("users")
+}
+
+// =============================================
+// 用户订阅模型
+// =============================================
+model Subscription {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+
+  // 订阅状态: TRIAL(试用), ACTIVE(有效), EXPIRED(过期), CANCELLED(取消)
+  status          String   @default("NONE")
+
+  // 订阅计划: MONTHLY(月度), YEARLY(年度)
+  plan            String?
+
+  // Apple 交易信息
+  appleProductId  String?  @map("apple_product_id")
+  appleTransactionId String? @map("apple_transaction_id")
+
+  // 时间信息
+  trialStartDate  DateTime? @map("trial_start_date")
+  trialEndDate    DateTime? @map("trial_end_date")
+  subscriptionStartDate DateTime? @map("subscription_start_date")
+  subscriptionEndDate   DateTime? @map("subscription_end_date")
+
+  // 自动续费
+  autoRenew       Boolean  @default(true) @map("auto_renew")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
 // =============================================
