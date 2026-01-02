@@ -197,7 +197,7 @@ export class AuthService {
       throw new NotFoundException('用户不存在');
     }
 
-    // 删除用户及所有关联数据（Prisma cascade 会自动处理）
+    // 删除用户及所有关联数据
     await this.prisma.$transaction(async (tx) => {
       // 删除记录
       await tx.record.deleteMany({ where: { userId } });
@@ -211,6 +211,8 @@ export class AuthService {
       await tx.autoPayment.deleteMany({ where: { userId } });
       // 删除自动入账
       await tx.autoIncome.deleteMany({ where: { userId } });
+      // 删除订阅记录
+      await tx.subscription.deleteMany({ where: { userId } });
       // 最后删除用户
       await tx.user.delete({ where: { id: userId } });
     });

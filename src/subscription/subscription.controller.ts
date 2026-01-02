@@ -25,19 +25,19 @@ export class SubscriptionController {
   // 获取当前用户的订阅状态
   @Get('status')
   @UseGuards(JwtAuthGuard)
-  async getMySubscription(@CurrentUser() user: { userId: string }) {
-    return this.subscriptionService.getSubscription(user.userId);
+  async getMySubscription(@CurrentUser('id') userId: string) {
+    return this.subscriptionService.getSubscription(userId);
   }
 
   // 同步 Apple 订阅（iOS 端调用）
   @Post('sync-apple')
   @UseGuards(JwtAuthGuard)
   async syncAppleSubscription(
-    @CurrentUser() user: { userId: string },
+    @CurrentUser('id') userId: string,
     @Body() dto: SyncAppleSubscriptionDto,
   ) {
     return this.subscriptionService.syncAppleSubscription(
-      user.userId,
+      userId,
       dto.appleProductId,
       dto.appleTransactionId,
       dto.isInTrial,
