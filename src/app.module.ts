@@ -19,6 +19,7 @@ import { AutoPaymentsModule } from './auto-payments/auto-payments.module';
 import { AutoIncomesModule } from './auto-incomes/auto-incomes.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { HoldingsModule } from './holdings/holdings.module';
+import { InvestmentPriceModule } from './investment-price/investment-price.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { HoldingsModule } from './holdings/holdings.module';
     AutoIncomesModule,
     SubscriptionModule,
     HoldingsModule,
+    InvestmentPriceModule,
   ],
   controllers: [AppController],
   providers: [

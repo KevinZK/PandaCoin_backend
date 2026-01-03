@@ -288,6 +288,7 @@ model Holding {
   // 代码信息
   tickerCode        String?  @map("ticker_code")     // 标准代码: AAPL, 600519.SS, BTC-USD
   codeVerified      Boolean  @default(false) @map("code_verified") // 代码是否已验证
+  codeSource        String?  @map("code_source")     // 代码来源: AI, YFINANCE, COINGECKO, MANUAL
 
   // 持仓信息
   quantity          Float                            // 持有数量
@@ -295,7 +296,16 @@ model Holding {
 
   // 当前价格信息 (定时更新)
   currentPrice      Float?   @map("current_price")   // 当前/收盘价
+  previousClose     Float?   @map("previous_close")  // 前收盘价
+  priceChange       Float?   @map("price_change")    // 价格变动
+  priceChangePercent Float?  @map("price_change_percent") // 价格变动百分比
   lastPriceAt       DateTime? @map("last_price_at")  // 价格更新时间
+  priceSource       String?  @map("price_source")    // 价格来源: YFINANCE, COINGECKO, AKSHARE, MANUAL
+
+  // 计算字段 (可选，便于查询)
+  currentValue      Float?   @map("current_value")   // 当前市值 (quantity * currentPrice)
+  profitLoss        Float?   @map("profit_loss")     // 盈亏金额
+  profitLossPercent Float?   @map("profit_loss_percent") // 盈亏百分比
 
   currency          String   @default("USD")
   createdAt         DateTime @default(now()) @map("created_at")
@@ -305,11 +315,89 @@ model Holding {
   account           Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions      HoldingTransaction[]
+  priceHistory      PriceHistory[]
 
   @@unique([accountId, tickerCode])
   @@index([accountId])
   @@index([userId])
+  @@index([tickerCode])
   @@map("holdings")
+}
+
+// =============================================
+// 价格历史模型
+// =============================================
+model PriceHistory {
+  id            String   @id @default(uuid())
+  holdingId     String   @map("holding_id")
+  tickerCode    String   @map("ticker_code")       // 冗余存储，便于批量查询
+  
+  date          DateTime                           // 日期
+  open          Float?                             // 开盘价
+  high          Float?                             // 最高价
+  low           Float?                             // 最低价
+  close         Float                              // 收盘价
+  volume        Float?                             // 成交量
+  
+  source        String                             // 数据来源: YFINANCE, COINGECKO, AKSHARE
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  // 关系
+  holding       Holding  @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  
+  @@unique([holdingId, date])
+  @@index([holdingId])
+  @@index([tickerCode, date])
+  @@map("price_history")
+}
+
+// =============================================
+// 资产代码映射缓存模型
+// =============================================
+// 用于缓存用户输入名称到标准代码的映射
+// 例如: "苹果" -> "AAPL", "茅台" -> "600519.SS"
+model AssetCodeMapping {
+  id            String   @id @default(uuid())
+  
+  inputName     String   @map("input_name")        // 用户输入: "苹果", "Apple", "茅台"
+  standardCode  String   @map("standard_code")     // 标准代码: "AAPL", "600519.SS"
+  standardName  String?  @map("standard_name")     // 标准名称: "Apple Inc."
+  
+  type          String                             // STOCK, ETF, FUND, BOND, CRYPTO
+  market        String                             // US, HK, CN, CRYPTO, GLOBAL
+  
+  confidence    Float    @default(1.0)             // 匹配置信度 (0-1)
+  hitCount      Int      @default(1) @map("hit_count") // 被使用次数
+  lastUsedAt    DateTime @default(now()) @map("last_used_at")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  @@unique([inputName, type, market])
+  @@index([inputName])
+  @@index([standardCode])
+  @@map("asset_code_mappings")
+}
+
+// =============================================
+// 价格更新日志模型
+// =============================================
+model PriceUpdateLog {
+  id            String   @id @default(uuid())
+  
+  executedAt    DateTime @default(now()) @map("executed_at")
+  totalAssets   Int      @map("total_assets")      // 需要更新的资产总数
+  successCount  Int      @map("success_count")     // 成功更新数
+  failCount     Int      @map("fail_count")        // 失败数
+  skipCount     Int      @default(0) @map("skip_count") // 跳过数 (节假日等)
+  
+  duration      Int                                // 执行耗时 (毫秒)
+  source        String                             // 执行来源: CRON_STOCK, CRON_CRYPTO, MANUAL
+  
+  errors        String?                            // 错误详情 (JSON 格式)
+  
+  @@index([executedAt])
+  @@map("price_update_logs")
 }
 
 // =============================================

@@ -17,6 +17,22 @@ Your sole function is to analyze the user's free-form financial statement, deter
 
 5. If the user's statement contains no identifiable financial data or a non-actionable command (e.g., "hello" or "what is the weather"), you MUST return the special JSON: {"events": [{"event_type": "NULL_STATEMENT", "data": {"error_message": "Non-financial or insufficient data."}}]}
 
+5.1 MISSING CRITICAL INFO HANDLING (CRITICAL FOR HOLDINGS):
+   - For HOLDING_UPDATE (buying/selling financial assets), the following fields are CRITICAL:
+     * name: Asset name (REQUIRED)
+     * quantity: Number of shares/units (REQUIRED)
+     * price: Per-unit buy/sell price (REQUIRED for BUY/SELL actions)
+   
+   - If the user mentions buying/selling an asset but OMITS the price (e.g., "买了200股航天动力"), you MUST return:
+     {"events": [{"event_type": "NEED_MORE_INFO", "data": {"original_intent": "HOLDING_UPDATE", "missing_fields": ["price"], "question": "好的，请问你买入的价格是多少？", "partial_data": {<all known fields from user input>}}}]}
+   
+   - If the user mentions buying/selling but OMITS the quantity, ask for quantity.
+   
+   - EXCEPTION: If user says "我持有/我有X股..." (describing current holdings, not a new transaction), price is NOT required - use price=1 as placeholder.
+   
+   - The 'question' field MUST be a natural, friendly Chinese question asking for the missing info.
+   - The 'partial_data' field MUST contain all the data you could extract from the user's input.
+
 6. COMPOUND EVENTS (CRITICAL): If the statement contains multiple distinct financial declarations or actions (e.g., "I have a house worth 350k with a 10k loan and pay 3k monthly"), you MUST return multiple event objects within the "events" array. Specifically:
    - For ASSET/LIABILITY DECLARATIONS: Capture all related details (like repayment schedules, credit limits, and due dates) within the ASSET_UPDATE or CREDIT_CARD_UPDATE event. DO NOT generate a separate TRANSACTION event for the periodic repayment commitment itself unless the user explicitly logs a payment action (e.g., "I just paid my rent").
    - PRIORITY RULE: When parsing any credit card related configuration (limit, due date), you MUST use the 'CREDIT_CARD_UPDATE' event type. Debt balance/outstanding amounts MUST use 'CREDIT_CARD_UPDATE' with 'outstanding_balance' field.
@@ -105,7 +121,7 @@ Your sole function is to analyze the user's free-form financial statement, deter
 {
   "events": [
     {
-      "event_type": "TRANSACTION" | "ASSET_UPDATE" | "CREDIT_CARD_UPDATE" | "HOLDING_UPDATE" | "BUDGET" | "NULL_STATEMENT",
+      "event_type": "TRANSACTION" | "ASSET_UPDATE" | "CREDIT_CARD_UPDATE" | "HOLDING_UPDATE" | "BUDGET" | "NULL_STATEMENT" | "NEED_MORE_INFO",
       "data": {
         // FLAT SUPER-OBJECT MODEL: All fields are at this level.
       }
@@ -160,9 +176,44 @@ Your sole function is to analyze the user's free-form financial statement, deter
    - HK company names or explicit 港股 mention -> market = "HK"
    - Crypto names (比特币, 以太坊, BTC, ETH, DOGE) -> market = "CRYPTO", holding_type = "CRYPTO"
 
-   **TICKER CODE INFERENCE (OPTIONAL)**:
+   **TICKER CODE INFERENCE (CRITICAL)**:
    - If user provides ticker code (e.g., AAPL, 600519), include it in ticker_code field.
-   - If user only provides company name, leave ticker_code empty (backend will resolve it).
+   - If user provides well-known company name, YOU MUST infer the ticker_code:
+     
+     COMMON US STOCKS:
+     - 苹果/Apple -> AAPL
+     - 特斯拉/Tesla -> TSLA
+     - 谷歌/Google/Alphabet -> GOOGL
+     - 亚马逊/Amazon -> AMZN
+     - 微软/Microsoft -> MSFT
+     - 英伟达/Nvidia -> NVDA
+     - Meta/Facebook -> META
+     - 奈飞/Netflix -> NFLX
+     
+     COMMON CN STOCKS (A股):
+     - 茅台/贵州茅台 -> 600519.SS
+     - 五粮液 -> 000858.SZ
+     - 中国平安/平安 -> 601318.SS
+     - 招商银行/招行 -> 600036.SS
+     - 宁德时代 -> 300750.SZ
+     - 比亚迪 -> 002594.SZ
+     
+     COMMON HK STOCKS (港股):
+     - 腾讯/腾讯控股 -> 0700.HK
+     - 阿里巴巴/阿里 -> 9988.HK
+     - 美团 -> 3690.HK
+     - 小米 -> 1810.HK
+     - 京东 -> 9618.HK
+     
+     COMMON CRYPTO:
+     - 比特币/Bitcoin/BTC -> BTC-USD
+     - 以太坊/Ethereum/ETH -> ETH-USD
+     - 狗狗币/Dogecoin/DOGE -> DOGE-USD
+     - 瑞波币/XRP -> XRP-USD
+     - 莱特币/Litecoin/LTC -> LTC-USD
+     - 索拉纳/Solana/SOL -> SOL-USD
+   
+   - For unknown companies, leave ticker_code empty (backend will resolve it via yfinance search).
 
    **CRITICAL**:
    - 'name' field is the user's input name (e.g., "苹果股票", "比特币").
@@ -174,6 +225,24 @@ Your sole function is to analyze the user's free-form financial statement, deter
    - Core Fields: amount (represents TARGET/LIMIT), currency, date (TARGET DATE/DEADLINE), name (BUDGET NAME).
    - Specific Fields: budget_action, priority, is_recurring, category.
    - **RECURRING BUDGET DETECTION**: If user mentions "每月/每个月/月度/monthly/每月份/per month", set is_recurring: true. Otherwise, set is_recurring: false or omit it.
+
+6. NEED_MORE_INFO (Missing critical information - requires follow-up question)
+   // Use this when the user's intent is clear but critical data is missing.
+   // This enables multi-turn conversation to collect complete information.
+   - Core Fields:
+     * original_intent: The event type that would be generated if info was complete (e.g., "HOLDING_UPDATE")
+     * missing_fields: Array of field names that are missing (e.g., ["price"])
+     * question: A natural, friendly Chinese question asking for the missing info
+     * partial_data: Object containing all the data that WAS provided by the user
+   
+   **WHEN TO USE**:
+   - HOLDING_UPDATE: price is missing for BUY/SELL action (NOT for "我持有/我有" statements)
+   - Other critical missing data scenarios
+   
+   **QUESTION EXAMPLES**:
+   - Missing price: "好的，请问你买入的价格是多少？"
+   - Missing quantity: "请问你买入了多少股/份？"
+   - Missing target account: "请问你要转账到哪个账户？"
 
 [EXAMPLES]
 
@@ -307,7 +376,33 @@ Input: "我持有400股航天动力"
 Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"航天动力","holding_type":"STOCK","holding_action":"BUY","quantity":400,"price":1,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
 
 Input: "我有500股茅台"
-Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"茅台","holding_type":"STOCK","holding_action":"BUY","quantity":500,"price":1,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"茅台","ticker_code":"600519.SS","holding_type":"STOCK","holding_action":"BUY","quantity":500,"price":1,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
+
+Input: "买入100股特斯拉，每股250美元"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"特斯拉","ticker_code":"TSLA","holding_type":"STOCK","holding_action":"BUY","quantity":100,"price":250,"currency":"USD","market":"US","date":"{CURRENT_DATE}"}}]}
+
+Input: "持有0.1个比特币"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"比特币","ticker_code":"BTC-USD","holding_type":"CRYPTO","holding_action":"BUY","quantity":0.1,"price":1,"currency":"USD","market":"CRYPTO","date":"{CURRENT_DATE}"}}]}
+
+Input: "买了200股腾讯，每股350港币"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"腾讯","ticker_code":"0700.HK","holding_type":"STOCK","holding_action":"BUY","quantity":200,"price":350,"currency":"HKD","market":"HK","date":"{CURRENT_DATE}"}}]}
+
+// === NEED_MORE_INFO EXAMPLES (Missing Critical Data) ===
+Input: "我今天买入了200股航天动力"
+Output: {"events":[{"event_type":"NEED_MORE_INFO","data":{"original_intent":"HOLDING_UPDATE","missing_fields":["price"],"question":"好的，请问你买入的价格是多少？","partial_data":{"name":"航天动力","holding_type":"STOCK","holding_action":"BUY","quantity":200,"market":"CN","date":"{CURRENT_DATE}"}}}]}
+
+Input: "买了100股苹果"
+Output: {"events":[{"event_type":"NEED_MORE_INFO","data":{"original_intent":"HOLDING_UPDATE","missing_fields":["price"],"question":"好的，请问你买入的价格是多少美元？","partial_data":{"name":"苹果","ticker_code":"AAPL","holding_type":"STOCK","holding_action":"BUY","quantity":100,"market":"US","currency":"USD","date":"{CURRENT_DATE}"}}}]}
+
+Input: "卖出了茅台股票"
+Output: {"events":[{"event_type":"NEED_MORE_INFO","data":{"original_intent":"HOLDING_UPDATE","missing_fields":["quantity","price"],"question":"好的，请问你卖出了多少股，卖出价格是多少？","partial_data":{"name":"茅台","ticker_code":"600519.SS","holding_type":"STOCK","holding_action":"SELL","market":"CN","currency":"CNY","date":"{CURRENT_DATE}"}}}]}
+
+Input: "买入0.5个比特币"
+Output: {"events":[{"event_type":"NEED_MORE_INFO","data":{"original_intent":"HOLDING_UPDATE","missing_fields":["price"],"question":"好的，请问你买入的价格是多少美元？","partial_data":{"name":"比特币","ticker_code":"BTC-USD","holding_type":"CRYPTO","holding_action":"BUY","quantity":0.5,"market":"CRYPTO","currency":"USD","date":"{CURRENT_DATE}"}}}]}
+
+// Note: "我持有/我有" statements do NOT trigger NEED_MORE_INFO - they use price=1 as placeholder
+Input: "我有200股航天动力"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"航天动力","holding_type":"STOCK","holding_action":"BUY","quantity":200,"price":1,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
 `;
 
 /**
@@ -347,7 +442,7 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
           event_type: {
             type: 'string',
             description: 'Event type in UPPERCASE',
-            enum: ['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'HOLDING_UPDATE', 'BUDGET', 'NULL_STATEMENT'],
+            enum: ['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'HOLDING_UPDATE', 'BUDGET', 'NULL_STATEMENT', 'NEED_MORE_INFO'],
           },
           data: {
             type: 'object',
@@ -496,7 +591,29 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
               // Note: is_recurring is already defined in TRANSACTION section and is shared by BUDGET
 
               // ==========================================
-              // 7. ERROR HANDLING
+              // 7. NEED_MORE_INFO SPECIFIC FIELDS
+              // ==========================================
+              original_intent: {
+                type: 'string',
+                description: 'The event type that would be generated if all info was provided',
+                enum: ['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'HOLDING_UPDATE', 'BUDGET'],
+              },
+              missing_fields: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Array of field names that are missing (e.g., ["price", "quantity"])',
+              },
+              question: {
+                type: 'string',
+                description: 'A natural, friendly question asking for the missing info',
+              },
+              partial_data: {
+                type: 'object',
+                description: 'Object containing all the data that WAS provided by the user',
+              },
+
+              // ==========================================
+              // 8. ERROR HANDLING
               // ==========================================
               error_message: { type: 'string' }
             },

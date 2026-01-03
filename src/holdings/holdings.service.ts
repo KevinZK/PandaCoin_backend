@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -11,10 +12,18 @@ import {
   BuyNewHoldingDto,
   HoldingTransactionType,
 } from './dto/holding.dto';
+import { InvestmentPriceService } from '../investment-price/investment-price.service';
+import { InvestmentCodeService } from '../investment-price/investment-code.service';
 
 @Injectable()
 export class HoldingsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(HoldingsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private priceService: InvestmentPriceService,
+    private codeService: InvestmentCodeService,
+  ) {}
 
   /**
    * 创建持仓（无初始交易）
@@ -56,7 +65,7 @@ export class HoldingsService {
    * 买入新资产（创建持仓 + 首次买入交易 + 扣减账户余额）
    */
   async buyNewHolding(userId: string, dto: BuyNewHoldingDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // 1. 验证账户
       const account = await tx.account.findFirst({
         where: { id: dto.accountId, userId },
@@ -125,6 +134,61 @@ export class HoldingsService {
 
       return { holding, transaction };
     });
+
+    // 6. 异步获取最新价格（不阻塞主流程）
+    this.fetchAndUpdatePrice(result.holding.id, result.holding.name, dto.tickerCode, dto.market || 'US')
+      .catch(err => this.logger.warn(`自动获取价格失败: ${err.message}`));
+
+    return result;
+  }
+
+  /**
+   * 异步获取并更新持仓价格
+   * 在创建持仓后自动调用，不阻塞主流程
+   */
+  private async fetchAndUpdatePrice(
+    holdingId: string,
+    name: string,
+    tickerCode?: string,
+    market: string = 'US',
+  ) {
+    try {
+      // 1. 如果没有 tickerCode，尝试通过名称搜索
+      let finalTickerCode = tickerCode;
+      let displayName: string | undefined;
+
+      if (!finalTickerCode) {
+        this.logger.log(`尝试搜索 "${name}" 的代码...`);
+        const searchResults = await this.codeService.searchAssets(name, market);
+        
+        if (searchResults.length > 0) {
+          const bestMatch = searchResults[0];
+          finalTickerCode = bestMatch.tickerCode;
+          displayName = bestMatch.name;
+          this.logger.log(`找到匹配: ${name} -> ${finalTickerCode} (${displayName})`);
+        } else {
+          this.logger.warn(`未找到 "${name}" 的代码`);
+          return;
+        }
+      }
+
+      // 2. 更新 tickerCode 到数据库
+      await this.prisma.holding.update({
+        where: { id: holdingId },
+        data: {
+          tickerCode: finalTickerCode,
+          displayName: displayName,
+          codeVerified: true,
+          codeSource: 'YFINANCE',
+        },
+      });
+
+      // 3. 获取最新价格
+      await this.priceService.updateHoldingPrice(holdingId);
+      this.logger.log(`成功更新 "${name}" 的价格`);
+    } catch (error) {
+      this.logger.error(`获取价格失败 (${name}): ${error.message}`);
+    }
   }
 
   /**
@@ -227,7 +291,26 @@ export class HoldingsService {
    * 更新持仓信息
    */
   async update(id: string, userId: string, dto: UpdateHoldingDto) {
-    await this.findOne(id, userId);
+    // 获取当前持仓数据
+    const currentHolding = await this.prisma.holding.findFirst({
+      where: { id, userId },
+    });
+
+    if (!currentHolding) {
+      throw new NotFoundException('持仓不存在');
+    }
+
+    // 计算新的数量和成本价
+    const newQuantity = dto.quantity !== undefined ? dto.quantity : currentHolding.quantity;
+    const newAvgCostPrice = dto.avgCostPrice !== undefined ? dto.avgCostPrice : currentHolding.avgCostPrice;
+    const newCurrentPrice = dto.currentPrice !== undefined ? dto.currentPrice : currentHolding.currentPrice;
+
+    // 重新计算盈亏相关字段
+    const currentPrice = newCurrentPrice || newAvgCostPrice;
+    const currentValue = newQuantity * currentPrice;
+    const costBasis = newQuantity * newAvgCostPrice;
+    const profitLoss = currentValue - costBasis;
+    const profitLossPercent = costBasis > 0 ? (profitLoss / costBasis) * 100 : 0;
 
     return this.prisma.holding.update({
       where: { id },
@@ -247,6 +330,10 @@ export class HoldingsService {
           lastPriceAt: new Date(),
         }),
         ...(dto.market && { market: dto.market }),
+        // 更新计算字段
+        currentValue,
+        profitLoss,
+        profitLossPercent,
       },
     });
   }
