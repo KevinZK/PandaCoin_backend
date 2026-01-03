@@ -29,9 +29,9 @@ Your sole function is to analyze the user's free-form financial statement, deter
 
 8. ENTITY CANONICALIZATION (Fuzzy Matching): When extracting entity names (source_account, target_account, name, institution_name), you MUST prioritize the core proper name by removing generic, descriptive suffixes or prefixes. Examples: "招商银行卡" -> "招商银行".
 
-9. CHINESE KEYWORDS (CRITICAL): 
+9. CHINESE KEYWORDS (CRITICAL):
    - "消费/花费/支出/买/付款" = EXPENSE
-   - "收入/收获/赚/工资/薪水/奖金/卖出/到账" = INCOME
+   - "收入/收获/赚/工资/薪水/奖金/到账" = INCOME
    - "转账/转出/转入" = TRANSFER
    - "还款/还了/还清" (for credit card or loan) = PAYMENT
    - "尾号/卡号/末四位/后四位" -> Extract digits to 'card_identifier'
@@ -39,6 +39,20 @@ Your sole function is to analyze the user's free-form financial statement, deter
    - "支付宝" -> source_account = "支付宝"
    - "花呗" -> source_account = "花呗" (treat as credit-like)
    - "现金" -> source_account = "现金"
+
+   HOLDING KEYWORDS (FINANCIAL ASSETS):
+   - "买入/买了/购入/建仓/加仓/持有/拥有/有" + (股票/基金/ETF/数字货币/比特币/以太坊/币等) = HOLDING_UPDATE (action: BUY)
+   - "卖出/卖了/清仓/减仓/出售" + (股票/基金/ETF/数字货币等) = HOLDING_UPDATE (action: SELL)
+   - "股票/A股/美股/港股" -> holding_type = "STOCK"
+   - "基金" -> holding_type = "FUND"
+   - "ETF" -> holding_type = "ETF"
+   - "债券" -> holding_type = "BOND"
+   - "数字货币/加密货币/虚拟货币/币/比特币/以太坊/BTC/ETH" -> holding_type = "CRYPTO"
+   - "期权" -> holding_type = "OPTION"
+
+   HOLDING PRICE HANDLING:
+   - If user specifies price (e.g., "买入100股苹果，每股180"), use that price.
+   - If user only mentions holding without price (e.g., "我持有400股航天动力"), set price to 1 as placeholder. The app will calculate market value from real-time prices later.
 
 10. TRANSACTION COMPLETENESS (CRITICAL): Every TRANSACTION event MUST include:
     - category: Infer from context (see category list below)
@@ -91,7 +105,7 @@ Your sole function is to analyze the user's free-form financial statement, deter
 {
   "events": [
     {
-      "event_type": "TRANSACTION" | "ASSET_UPDATE" | "CREDIT_CARD_UPDATE" | "BUDGET" | "NULL_STATEMENT",
+      "event_type": "TRANSACTION" | "ASSET_UPDATE" | "CREDIT_CARD_UPDATE" | "HOLDING_UPDATE" | "BUDGET" | "NULL_STATEMENT",
       "data": {
         // FLAT SUPER-OBJECT MODEL: All fields are at this level.
       }
@@ -127,10 +141,36 @@ Your sole function is to analyze the user's free-form financial statement, deter
    - Specific Fields: institution_name, repayment_due_date (Day of Month, e.g. "10"), card_identifier, outstanding_balance (current debt amount).
    - Auto Repayment Fields: auto_repayment (boolean), repayment_type ("FULL" or "MIN"), source_account (扣款来源账户).
    - **FORBIDDEN FIELDS**: transaction_type, category, target_account, repayment_schedule, note. (These belong to TRANSACTION).
-   
+
    **CRITICAL**: The 'name' field is MANDATORY. Generate it as "{institution_name}信用卡" (e.g., "招商银行信用卡", "花旗银行信用卡").
 
-4. BUDGET (Financial plans, spending limits, or savings targets)
+4. HOLDING_UPDATE (Buy/Sell financial assets: stocks, ETFs, funds, crypto, bonds, options)
+   // Use this event type when user mentions buying or selling financial assets.
+   // This is for managing holdings within an investment/crypto account.
+   - Core Fields: name (asset name, e.g. "苹果", "比特币", "茅台"), holding_type, holding_action, quantity, price, currency, date.
+   - Specific Fields: ticker_code (optional, e.g. "AAPL", "BTC-USD"), market (US, HK, CN, CRYPTO, GLOBAL), account_name (证券账户名称), fee (交易手续费), note.
+
+   holding_type ENUMS: "STOCK", "ETF", "FUND", "BOND", "CRYPTO", "OPTION", "OTHER"
+   holding_action ENUMS: "BUY", "SELL"
+   market ENUMS: "US" (default for stocks), "HK", "CN", "CRYPTO" (for digital currencies), "GLOBAL"
+
+   **MARKET DETECTION**:
+   - Chinese company names (茅台, 腾讯, 阿里巴巴) without market specifier -> market = "CN" (A股)
+   - US company names (Apple, 苹果, Tesla, 特斯拉, Google) -> market = "US"
+   - HK company names or explicit 港股 mention -> market = "HK"
+   - Crypto names (比特币, 以太坊, BTC, ETH, DOGE) -> market = "CRYPTO", holding_type = "CRYPTO"
+
+   **TICKER CODE INFERENCE (OPTIONAL)**:
+   - If user provides ticker code (e.g., AAPL, 600519), include it in ticker_code field.
+   - If user only provides company name, leave ticker_code empty (backend will resolve it).
+
+   **CRITICAL**:
+   - 'name' field is the user's input name (e.g., "苹果股票", "比特币").
+   - 'quantity' is the number of shares/units.
+   - 'price' is the per-unit price.
+   - For crypto, quantity can be decimal (e.g., 0.5 BTC).
+
+5. BUDGET (Financial plans, spending limits, or savings targets)
    - Core Fields: amount (represents TARGET/LIMIT), currency, date (TARGET DATE/DEADLINE), name (BUDGET NAME).
    - Specific Fields: budget_action, priority, is_recurring, category.
    - **RECURRING BUDGET DETECTION**: If user mentions "每月/每个月/月度/monthly/每月份/per month", set is_recurring: true. Otherwise, set is_recurring: false or omit it.
@@ -237,6 +277,37 @@ Output: {"events":[{"event_type":"ASSET_UPDATE","data":{"name":"房贷","asset_t
 
 Input: "我有一张招行信用卡尾号5678，每月15号自动全额还款从建设银行扣"
 Output: {"events":[{"event_type":"CREDIT_CARD_UPDATE","data":{"name":"招商银行信用卡","institution_name":"招商银行","card_identifier":"5678","repayment_due_date":"15","auto_repayment":true,"repayment_type":"FULL","source_account":"建设银行","date":"{CURRENT_DATE}"}}]}
+
+// === HOLDING (FINANCIAL ASSET) EXAMPLES ===
+Input: "今天买了100股苹果，价格是180美元"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"苹果","holding_type":"STOCK","holding_action":"BUY","quantity":100,"price":180,"currency":"USD","market":"US","date":"{CURRENT_DATE}"}}]}
+
+Input: "买入500股茅台，单价1800"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"茅台","holding_type":"STOCK","holding_action":"BUY","quantity":500,"price":1800,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
+
+Input: "卖出200股腾讯，每股380港币"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"腾讯","holding_type":"STOCK","holding_action":"SELL","quantity":200,"price":380,"currency":"HKD","market":"HK","date":"{CURRENT_DATE}"}}]}
+
+Input: "买了0.5个比特币，花了25000美元"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"比特币","holding_type":"CRYPTO","holding_action":"BUY","quantity":0.5,"price":50000,"currency":"USD","market":"CRYPTO","date":"{CURRENT_DATE}"}}]}
+
+Input: "卖了2个以太坊，每个3500"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"以太坊","holding_type":"CRYPTO","holding_action":"SELL","quantity":2,"price":3500,"currency":"USD","market":"CRYPTO","date":"{CURRENT_DATE}"}}]}
+
+Input: "在富途证券买入AAPL 50股，185美元"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"苹果","ticker_code":"AAPL","holding_type":"STOCK","holding_action":"BUY","quantity":50,"price":185,"currency":"USD","market":"US","account_name":"富途证券","date":"{CURRENT_DATE}"}}]}
+
+Input: "买入沪深300ETF 1000份，4.5元"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"沪深300ETF","holding_type":"ETF","holding_action":"BUY","quantity":1000,"price":4.5,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
+
+Input: "在招商银行证券账户卖出100股中国平安，每股45元"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"中国平安","holding_type":"STOCK","holding_action":"SELL","quantity":100,"price":45,"currency":"CNY","market":"CN","account_name":"招商银行证券账户","date":"{CURRENT_DATE}"}}]}
+
+Input: "我持有400股航天动力"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"航天动力","holding_type":"STOCK","holding_action":"BUY","quantity":400,"price":1,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
+
+Input: "我有500股茅台"
+Output: {"events":[{"event_type":"HOLDING_UPDATE","data":{"name":"茅台","holding_type":"STOCK","holding_action":"BUY","quantity":500,"price":1,"currency":"CNY","market":"CN","date":"{CURRENT_DATE}"}}]}
 `;
 
 /**
@@ -276,7 +347,7 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
           event_type: {
             type: 'string',
             description: 'Event type in UPPERCASE',
-            enum: ['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'BUDGET', 'NULL_STATEMENT'],
+            enum: ['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'HOLDING_UPDATE', 'BUDGET', 'NULL_STATEMENT'],
           },
           data: {
             type: 'object',
@@ -377,7 +448,42 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
               repayment_type: { type: 'string', enum: ['FULL', 'MIN'], description: 'For credit cards: FULL or MIN repayment' },
               
               // ==========================================
-              // 5. BUDGET SPECIFIC FIELDS
+              // 5. HOLDING (FINANCIAL ASSET) SPECIFIC FIELDS
+              // ==========================================
+              holding_type: {
+                type: 'string',
+                enum: ['STOCK', 'ETF', 'FUND', 'BOND', 'CRYPTO', 'OPTION', 'OTHER'],
+                description: 'Type of financial asset',
+              },
+              holding_action: {
+                type: 'string',
+                enum: ['BUY', 'SELL'],
+                description: 'Buy or Sell action',
+              },
+              ticker_code: {
+                type: 'string',
+                description: 'Stock/ETF ticker symbol (e.g., AAPL, BTC-USD, 600519)',
+              },
+              market: {
+                type: 'string',
+                enum: ['US', 'HK', 'CN', 'CRYPTO', 'GLOBAL'],
+                description: 'Market where the asset is traded',
+              },
+              account_name: {
+                type: 'string',
+                description: 'Name of the securities/crypto account',
+              },
+              price: {
+                type: 'number',
+                description: 'Per-unit price for holding transactions',
+              },
+              fee: {
+                type: 'number',
+                description: 'Transaction fee for holding trades',
+              },
+
+              // ==========================================
+              // 6. BUDGET SPECIFIC FIELDS
               // ==========================================
               budget_action: {
                 type: 'string',
@@ -390,7 +496,7 @@ export const FINANCIAL_EVENTS_JSON_SCHEMA = {
               // Note: is_recurring is already defined in TRANSACTION section and is shared by BUDGET
 
               // ==========================================
-              // 6. ERROR HANDLING
+              // 7. ERROR HANDLING
               // ==========================================
               error_message: { type: 'string' }
             },

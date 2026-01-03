@@ -18,6 +18,7 @@ import { CreditCardsModule } from './credit-cards/credit-cards.module';
 import { AutoPaymentsModule } from './auto-payments/auto-payments.module';
 import { AutoIncomesModule } from './auto-incomes/auto-incomes.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { HoldingsModule } from './holdings/holdings.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     AutoPaymentsModule,
     AutoIncomesModule,
     SubscriptionModule,
+    HoldingsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -46,6 +46,8 @@ model User {
   autoPayments AutoPayment[]
   autoIncomes AutoIncome[]
   subscription Subscription?
+  holdings    Holding[]
+  holdingTransactions HoldingTransaction[]
 
   @@map("users")
 }
@@ -113,6 +115,7 @@ model Account {
   autoPaymentsAsTarget AutoPayment[] @relation("PaymentTarget") // 作为还款目标
   autoPaymentSources AutoPaymentSource[] @relation("AutoPaymentSources") // 作为自动扣款来源
   autoIncomes    AutoIncome[] @relation("IncomeTarget") // 作为自动入账目标
+  holdings       Holding[] // 证券账户下的持仓
 
   @@index([userId])
   @@map("accounts")
@@ -231,7 +234,7 @@ model Budget {
 }
 
 // =============================================
-// 投资持仓模型 (阶段三功能)
+// 投资持仓模型 (已废弃，使用 Holding 替代)
 // =============================================
 model Investment {
   id            String   @id @default(uuid())
@@ -244,12 +247,111 @@ model Investment {
   userId        String   @map("user_id")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
-  
+
   // 关联记录
   records       Record[]
 
   @@index([userId])
   @@map("investments")
+}
+
+// =============================================
+// 持仓模型 (证券账户下的金融资产)
+// =============================================
+// 持仓类型常量 (SQLite不支持enum,使用String)
+// STOCK = 股票
+// ETF = ETF基金
+// FUND = 基金
+// BOND = 债券
+// CRYPTO = 数字货币
+// OPTION = 期权
+// OTHER = 其他
+
+// 市场常量
+// US = 美股
+// HK = 港股
+// CN = A股
+// CRYPTO = 加密货币市场
+// GLOBAL = 全球其他
+
+model Holding {
+  id                String   @id @default(uuid())
+  accountId         String   @map("account_id")      // 归属的证券账户
+  userId            String   @map("user_id")
+
+  // 资产标识
+  name              String                           // 用户输入名称: "苹果"
+  displayName       String?  @map("display_name")    // 标准名称: "Apple Inc."
+  type              String                           // STOCK, ETF, FUND, BOND, CRYPTO, OPTION, OTHER
+  market            String   @default("US")          // US, HK, CN, CRYPTO, GLOBAL
+
+  // 代码信息
+  tickerCode        String?  @map("ticker_code")     // 标准代码: AAPL, 600519.SS, BTC-USD
+  codeVerified      Boolean  @default(false) @map("code_verified") // 代码是否已验证
+
+  // 持仓信息
+  quantity          Float                            // 持有数量
+  avgCostPrice      Float    @map("avg_cost_price")  // 平均成本价
+
+  // 当前价格信息 (定时更新)
+  currentPrice      Float?   @map("current_price")   // 当前/收盘价
+  lastPriceAt       DateTime? @map("last_price_at")  // 价格更新时间
+
+  currency          String   @default("USD")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // 关系
+  account           Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      HoldingTransaction[]
+
+  @@unique([accountId, tickerCode])
+  @@index([accountId])
+  @@index([userId])
+  @@map("holdings")
+}
+
+// =============================================
+// 持仓交易记录模型
+// =============================================
+// 交易类型常量
+// BUY = 买入
+// SELL = 卖出
+// DIVIDEND = 分红
+// TRANSFER_IN = 转入
+// TRANSFER_OUT = 转出
+
+model HoldingTransaction {
+  id              String   @id @default(uuid())
+  holdingId       String   @map("holding_id")
+  accountId       String   @map("account_id")        // 冗余，方便查询
+  userId          String   @map("user_id")
+
+  type            String                             // BUY, SELL, DIVIDEND, TRANSFER_IN, TRANSFER_OUT
+  quantity        Float                              // 数量
+  price           Float                              // 成交价
+  amount          Float                              // 成交金额 (quantity * price)
+  fee             Float?                             // 手续费
+
+  // 交易后状态快照
+  quantityAfter   Float    @map("quantity_after")    // 交易后持仓数量
+  avgCostAfter    Float    @map("avg_cost_after")    // 交易后平均成本
+
+  date            DateTime
+  note            String?
+  rawText         String?  @map("raw_text")          // AI 原始输入
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // 关系
+  holding         Holding  @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([holdingId])
+  @@index([accountId, date])
+  @@index([userId, date])
+  @@map("holding_transactions")
 }
 
 // =============================================

@@ -181,13 +181,62 @@ export class AccountsService {
     });
   }
 
-  // 计算总资产
+  // 计算总资产 (包含持仓市值)
   async getTotalAssets(userId: string) {
+    // 获取所有账户
     const accounts = await this.prisma.account.findMany({
+      where: { userId },
+      include: {
+        holdings: true, // 包含持仓
+      },
+    });
+
+    // 获取所有持仓
+    const holdings = await this.prisma.holding.findMany({
       where: { userId },
     });
 
-    const total = accounts.reduce((sum: number, acc: any) => sum + Number(acc.balance), 0);
-    return { total, accounts };
+    // 计算账户余额总计
+    const cashTotal = accounts.reduce(
+      (sum: number, acc: any) => sum + Number(acc.balance),
+      0,
+    );
+
+    // 计算持仓总市值
+    const holdingsMarketValue = holdings.reduce((sum, h) => {
+      const price = h.currentPrice || h.avgCostPrice;
+      return sum + h.quantity * price;
+    }, 0);
+
+    // 计算持仓总成本
+    const holdingsCost = holdings.reduce((sum, h) => {
+      return sum + h.quantity * h.avgCostPrice;
+    }, 0);
+
+    // 处理账户列表，添加持仓信息
+    const accountsWithHoldings = accounts.map((acc: any) => {
+      const accHoldings = acc.holdings || [];
+      const holdingsValue = accHoldings.reduce((sum: number, h: any) => {
+        const price = h.currentPrice || h.avgCostPrice;
+        return sum + h.quantity * price;
+      }, 0);
+
+      return {
+        ...acc,
+        holdingsCount: accHoldings.length,
+        holdingsValue,
+        totalValue: acc.balance + holdingsValue,
+        holdings: undefined, // 移除详细持仓，避免响应过大
+      };
+    });
+
+    return {
+      total: cashTotal + holdingsMarketValue,
+      cashTotal,
+      holdingsMarketValue,
+      holdingsCost,
+      unrealizedPnL: holdingsMarketValue - holdingsCost,
+      accounts: accountsWithHoldings,
+    };
   }
 }
