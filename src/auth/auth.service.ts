@@ -249,14 +249,24 @@ export class AuthService {
     let isInTrialPeriod = false;
 
     if (subscription) {
+      console.log(`[Auth] validateUser subscription: status=${subscription.status}, subscriptionEndDate=${subscription.subscriptionEndDate}, trialEndDate=${subscription.trialEndDate}`);
+      
       if (subscription.status === 'ACTIVE' && subscription.subscriptionEndDate) {
-        isProMember = new Date(subscription.subscriptionEndDate) > now;
+        const endDate = new Date(subscription.subscriptionEndDate);
+        isProMember = endDate > now;
+        console.log(`[Auth] ACTIVE check: endDate=${endDate.toISOString()}, now=${now.toISOString()}, isProMember=${isProMember}`);
       }
       if (subscription.status === 'TRIAL' && subscription.trialEndDate) {
-        isProMember = new Date(subscription.trialEndDate) > now;
+        const endDate = new Date(subscription.trialEndDate);
+        isProMember = endDate > now;
         isInTrialPeriod = isProMember;
+        console.log(`[Auth] TRIAL check: endDate=${endDate.toISOString()}, now=${now.toISOString()}, isProMember=${isProMember}`);
       }
+    } else {
+      console.log(`[Auth] validateUser: no subscription found for userId=${userId}`);
     }
+
+    console.log(`[Auth] validateUser result: userId=${userId}, isProMember=${isProMember}, isInTrialPeriod=${isInTrialPeriod}`);
 
     return {
       ...user,

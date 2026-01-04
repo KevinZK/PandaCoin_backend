@@ -207,8 +207,12 @@ export class SubscriptionService {
     isInTrial: boolean,
     expirationDate: Date,
   ) {
-    const plan = appleProductId.includes('yearly') ? 'YEARLY' : 'MONTHLY';
+    // 根据产品 ID 判断计划类型
+    const plan = appleProductId.includes('pay2') ? 'YEARLY' : 'MONTHLY';
     const status = isInTrial ? 'TRIAL' : 'ACTIVE';
+    const now = new Date();
+
+    console.log(`[Subscription] syncAppleSubscription: userId=${userId}, productId=${appleProductId}, isInTrial=${isInTrial}, expirationDate=${expirationDate.toISOString()}`);
 
     const subscription = await this.prisma.subscription.upsert({
       where: { userId },
@@ -218,9 +222,9 @@ export class SubscriptionService {
         plan,
         appleProductId,
         appleTransactionId,
-        trialStartDate: isInTrial ? new Date() : null,
+        trialStartDate: isInTrial ? now : null,
         trialEndDate: isInTrial ? expirationDate : null,
-        subscriptionStartDate: isInTrial ? null : new Date(),
+        subscriptionStartDate: isInTrial ? null : now,
         subscriptionEndDate: isInTrial ? null : expirationDate,
       },
       update: {
@@ -228,10 +232,15 @@ export class SubscriptionService {
         plan,
         appleProductId,
         appleTransactionId,
-        trialEndDate: isInTrial ? expirationDate : undefined,
-        subscriptionEndDate: isInTrial ? undefined : expirationDate,
+        // 关键修复：update 时也要设置开始日期和结束日期
+        trialStartDate: isInTrial ? now : null,
+        trialEndDate: isInTrial ? expirationDate : null,
+        subscriptionStartDate: isInTrial ? null : now,
+        subscriptionEndDate: isInTrial ? null : expirationDate,
       },
     });
+
+    console.log(`[Subscription] syncAppleSubscription success: status=${subscription.status}, subscriptionEndDate=${subscription.subscriptionEndDate}, trialEndDate=${subscription.trialEndDate}`);
 
     return subscription;
   }
