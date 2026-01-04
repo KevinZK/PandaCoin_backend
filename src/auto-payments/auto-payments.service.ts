@@ -322,21 +322,22 @@ export class AutoPaymentsService {
               data: { currentBalance: { decrement: deductAmount } },
             });
           } else if (payment.liabilityAccountId) {
+            // 贷款类负债：余额存储为正数（欠款金额），还款后应减少
             await tx.account.update({
               where: { id: payment.liabilityAccountId },
-              data: { balance: { increment: deductAmount } }, // 负债减少（余额增加到0）
+              data: { balance: { decrement: deductAmount } },
             });
           }
 
-          // 创建记账记录
+          // 创建记账记录 - 关联到贷款账户，便于在贷款详情页查看还款历史
           await tx.record.create({
             data: {
               amount: deductAmount,
               type: 'PAYMENT',  // 还款类型
               category: 'LOAN_REPAYMENT',
               description: `[自动还款] ${payment.name} (来源: ${account.name})`,
-              accountId: account.id,
-              targetAccountId: payment.liabilityAccountId,
+              accountId: payment.liabilityAccountId || payment.creditCardId, // 关联到贷款/信用卡账户
+              targetAccountId: account.id, // 扣款来源账户
               creditCardId: payment.creditCardId,
               userId: payment.userId,
               date: new Date(),

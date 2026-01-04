@@ -221,7 +221,7 @@ export class AuthService {
   }
 
   async validateUser(userId: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -236,6 +236,33 @@ export class AuthService {
         defaultIncomeAccountType: true,
       },
     });
+
+    if (!user) return null;
+
+    // 获取订阅状态
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
+
+    const now = new Date();
+    let isProMember = false;
+    let isInTrialPeriod = false;
+
+    if (subscription) {
+      if (subscription.status === 'ACTIVE' && subscription.subscriptionEndDate) {
+        isProMember = new Date(subscription.subscriptionEndDate) > now;
+      }
+      if (subscription.status === 'TRIAL' && subscription.trialEndDate) {
+        isProMember = new Date(subscription.trialEndDate) > now;
+        isInTrialPeriod = isProMember;
+      }
+    }
+
+    return {
+      ...user,
+      isProMember,
+      isInTrialPeriod,
+    };
   }
 
   /**
