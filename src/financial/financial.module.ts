@@ -9,9 +9,10 @@ import { AIServiceRouter } from './providers/ai-service.router';
 import { PrismaModule } from '../prisma/prisma.module';
 import { LoggerModule } from '../common/logger/logger.module';
 import { RegionModule } from '../common/region/region.module';
+import { SkillsModule } from '../skills/skills.module';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, LoggerModule, RegionModule],
+  imports: [ConfigModule, PrismaModule, LoggerModule, RegionModule, SkillsModule],
   controllers: [FinancialController],
   providers: [
     FinancialParsingService,

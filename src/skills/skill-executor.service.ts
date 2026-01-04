@@ -83,42 +83,57 @@ export class SkillExecutorService {
   }
 
   /**
-   * 使用 AI 执行技能
+   * 使用 AI 执行技能（支持 Qwen）
    */
   private async executeSkillWithAI(
     skill: SkillDefinition,
     userMessage: string,
     context: SkillContext,
   ): Promise<{ response: any; confidence: number; rawResponse: string }> {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    const qwenApiKey = this.configService.get<string>('QWEN_API_KEY');
 
     // 构建完整的 Prompt
     const prompt = this.buildPrompt(skill, userMessage, context);
 
-    if (!apiKey || apiKey === 'your-gemini-api-key') {
+    if (!qwenApiKey) {
       // 没有 API Key，返回模拟数据
-      this.logger.warn('⚠️ 使用模拟数据（未配置 API Key）', 'SkillExecutor');
+      this.logger.warn('⚠️ 使用模拟数据（未配置 QWEN_API_KEY）', 'SkillExecutor');
       return this.getMockResponse(skill, userMessage, context);
     }
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${qwenApiKey}`,
+          },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 2048,
+            model: 'qwen-max',
+            input: {
+              messages: [
+                { role: 'system', content: prompt },
+                { role: 'user', content: userMessage },
+              ],
+            },
+            parameters: {
+              result_format: 'message',
+              temperature: 0.1,
+              max_tokens: 2048,
             },
           }),
         },
       );
 
       const data = await response.json();
-      const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const aiText =
+        data?.output?.choices?.[0]?.message?.content ||
+        data?.output?.text ||
+        '';
+
+      this.logger.debug(`Qwen 返回: ${aiText.substring(0, 200)}...`, 'SkillExecutor');
 
       // 提取 JSON
       const jsonMatch = aiText.match(/\{[\s\S]*\}/);
@@ -126,7 +141,7 @@ export class SkillExecutorService {
         const result = JSON.parse(jsonMatch[0]);
         return {
           response: result,
-          confidence: result.confidence || 0.85,
+          confidence: 0.85,
           rawResponse: aiText,
         };
       }
@@ -138,7 +153,7 @@ export class SkillExecutorService {
         rawResponse: aiText,
       };
     } catch (error) {
-      this.logger.error('AI 调用失败', error.stack, 'SkillExecutor');
+      this.logger.error('Qwen 调用失败', error.stack, 'SkillExecutor');
       return this.getMockResponse(skill, userMessage, context);
     }
   }
