@@ -18,6 +18,7 @@ export enum EventType {
   CREDIT_CARD_UPDATE = 'CREDIT_CARD_UPDATE',
   HOLDING_UPDATE = 'HOLDING_UPDATE',
   BUDGET = 'BUDGET',
+  AUTO_PAYMENT = 'AUTO_PAYMENT',  // 订阅/自动扣款
   NEED_MORE_INFO = 'NEED_MORE_INFO',
   QUERY_RESPONSE = 'QUERY_RESPONSE',
   NULL_STATEMENT = 'NULL_STATEMENT',
@@ -231,10 +232,10 @@ export class AssetUpdateData {
   @IsOptional()
   repayment_day?: number; // 还款日 (1-28)
 
-  // 自动还款配置
+  // 自动扣款配置
   @IsBoolean()
   @IsOptional()
-  auto_repayment?: boolean; // 是否启用自动还款
+  auto_repayment?: boolean; // 是否启用自动扣款
 
   @IsString()
   @IsOptional()
@@ -316,10 +317,10 @@ export class CreditCardUpdateData {
   @IsOptional()
   outstanding_balance?: number; // 当前待还金额
 
-  // 自动还款配置
+  // 自动扣款配置
   @IsBoolean()
   @IsOptional()
-  auto_repayment?: boolean; // 是否启用自动还款
+  auto_repayment?: boolean; // 是否启用自动扣款
 
   @IsEnum(RepaymentType)
   @IsOptional()
@@ -334,6 +335,48 @@ export class NullStatementData {
   @IsString()
   @IsOptional()
   error_message?: string;
+}
+
+// 自动扣款类型
+export enum AutoPaymentType {
+  SUBSCRIPTION = 'SUBSCRIPTION',     // 订阅服务
+  MEMBERSHIP = 'MEMBERSHIP',         // 会员费
+  INSURANCE = 'INSURANCE',           // 保险
+  UTILITY = 'UTILITY',               // 水电燃气
+  RENT = 'RENT',                     // 房租
+  OTHER = 'OTHER',                   // 其他
+}
+
+export class AutoPaymentData {
+  @IsString()
+  name: string;  // 订阅名称，如 "Finboo App"
+
+  @IsEnum(AutoPaymentType)
+  @IsOptional()
+  payment_type?: AutoPaymentType;  // 扣款类型
+
+  @IsNumber()
+  amount: number;  // 扣款金额
+
+  @IsString()
+  @IsOptional()
+  currency?: string;  // 币种，默认 CNY
+
+  @IsNumber()
+  @IsOptional()
+  day_of_month?: number;  // 每月扣款日 (1-28)
+
+  @IsString()
+  @IsOptional()
+  source_account?: string;  // 扣款来源账户
+
+  @IsEnum(Category)
+  @IsOptional()
+  category?: Category;  // 分类，默认 SUBSCRIPTION
+
+  @IsString()
+  @IsOptional()
+  note?: string;  // 备注
 }
 
 // Union type for all possible data types

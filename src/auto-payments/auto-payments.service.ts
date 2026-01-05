@@ -335,7 +335,7 @@ export class AutoPaymentsService {
               amount: deductAmount,
               type: 'PAYMENT',  // 还款类型
               category: 'LOAN_REPAYMENT',
-              description: `[自动还款] ${payment.name} (来源: ${account.name})`,
+              description: `[自动扣款] ${payment.name} (来源: ${account.name})`,
               accountId: payment.liabilityAccountId || payment.creditCardId, // 关联到贷款/信用卡账户
               targetAccountId: account.id, // 扣款来源账户
               creditCardId: payment.creditCardId,

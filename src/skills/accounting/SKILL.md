@@ -41,11 +41,23 @@
 - "每月餐饮预算2000"、"这个月购物不超过500" → BUDGET
 - "计划XX预算X"、"准备花X去XX" → BUDGET
 - "旅游预算"、"装修预算"、"婚礼预算" → BUDGET
-- 关键词：预算、计划、准备花、打算花、不超过
+- 关键词：预算、计划花费、准备花、打算花、不超过
+- **注意**：如果用户说"订阅XX"、"每月要花XX"但不是设置预算限额，而是描述一个固定的周期性支出，应该识别为 AUTO_PAYMENT 而非 BUDGET
+
+**AUTO_PAYMENT（自动扣款/订阅）**：周期性自动扣费的服务或费用
+- "订阅XX要花X"、"每月XX会员X元" → AUTO_PAYMENT (payment_type: SUBSCRIPTION)
+- "每月视频会员"、"App订阅"、"Netflix/Spotify等" → AUTO_PAYMENT (payment_type: SUBSCRIPTION)
+- "会员费每月X"、"年费会员" → AUTO_PAYMENT (payment_type: MEMBERSHIP)
+- "每月保险X"、"车险/医保" → AUTO_PAYMENT (payment_type: INSURANCE)
+- "每月水电费X"、"物业费" → AUTO_PAYMENT (payment_type: UTILITY)
+- "每月房租X" → AUTO_PAYMENT (payment_type: RENT)
+- 关键词：订阅、会员、每月要花、自动扣、续费
+- **重要**：如果用户未提供扣款日期（每月几号），必须使用 NEED_MORE_INFO 追问
 
 **NEED_MORE_INFO（追问缺失信息）**：缺少关键信息时追问
 - 买股票未说价格 → 追问价格
 - 记账未说金额 → 追问金额
+- 订阅/自动扣款未说扣款日期 → 追问"请问每月几号扣款？"
 
 **NULL_STATEMENT**：无法识别的输入
 
@@ -95,7 +107,7 @@
         "type": "object",
         "required": ["event_type", "data"],
         "properties": {
-          "event_type": { "enum": ["TRANSACTION", "ASSET_UPDATE", "CREDIT_CARD_UPDATE", "HOLDING_UPDATE", "BUDGET", "NEED_MORE_INFO", "NULL_STATEMENT"] },
+          "event_type": { "enum": ["TRANSACTION", "ASSET_UPDATE", "CREDIT_CARD_UPDATE", "HOLDING_UPDATE", "BUDGET", "AUTO_PAYMENT", "NEED_MORE_INFO", "NULL_STATEMENT"] },
           "data": {
             "type": "object",
             "properties": {
@@ -104,6 +116,8 @@
               "holding_type": { "enum": ["STOCK", "FUND", "ETF", "BOND", "CRYPTO", "OPTIONS", "OTHER"] },
               "holding_action": { "enum": ["BUY", "SELL", "HOLD"] },
               "budget_action": { "enum": ["CREATE_BUDGET", "UPDATE_BUDGET"] },
+              "payment_type": { "enum": ["SUBSCRIPTION", "MEMBERSHIP", "INSURANCE", "UTILITY", "RENT", "OTHER"] },
+              "day_of_month": { "type": "number", "minimum": 1, "maximum": 28 },
               "name": { "type": "string" },
               "amount": { "type": "number" },
               "quantity": { "type": "number" },
@@ -370,6 +384,74 @@ Output:
         "is_recurring": false,
         "date": "2026-03-01",
         "note": "意大利游玩"
+      }
+    }
+  ]
+}
+```
+
+### Example 12: 订阅服务（缺少扣款日期，需追问）
+Input: "我每个月订阅finboo app要花费15块"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "NEED_MORE_INFO",
+      "data": {
+        "original_intent": "AUTO_PAYMENT",
+        "missing_fields": ["day_of_month"],
+        "question": "好的，Finboo App 订阅每月15元。请问每月几号扣款？",
+        "partial_data": {
+          "name": "Finboo App",
+          "payment_type": "SUBSCRIPTION",
+          "amount": 15,
+          "currency": "CNY",
+          "category": "SUBSCRIPTION"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Example 13: 订阅服务（信息完整）
+Input: "我订阅了Netflix每月88块，每月5号扣费"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "AUTO_PAYMENT",
+      "data": {
+        "name": "Netflix",
+        "payment_type": "SUBSCRIPTION",
+        "amount": 88,
+        "currency": "CNY",
+        "day_of_month": 5,
+        "category": "SUBSCRIPTION"
+      }
+    }
+  ]
+}
+```
+
+### Example 14: 会员费
+Input: "京东Plus会员每年168，每年1月15号扣"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "AUTO_PAYMENT",
+      "data": {
+        "name": "京东Plus会员",
+        "payment_type": "MEMBERSHIP",
+        "amount": 168,
+        "currency": "CNY",
+        "day_of_month": 15,
+        "category": "SUBSCRIPTION",
+        "note": "年费会员"
       }
     }
   ]

@@ -167,7 +167,7 @@ export class SkillsController {
             balance: true,
           },
         }),
-        // 自动还款
+        // 自动扣款
         this.prisma.autoPayment.findMany({
           where: { userId, isEnabled: true },
           select: {

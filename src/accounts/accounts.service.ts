@@ -56,7 +56,7 @@ export class AccountsService {
         });
       }
 
-      // 3. 如果启用了自动还款，创建 AutoPayment 配置
+      // 3. 如果启用了自动扣款，创建 AutoPayment 配置
       if (dto.autoRepayment && dto.repaymentDay) {
         const paymentType = dto.type === 'MORTGAGE' ? 'MORTGAGE' : 'LOAN';
         

@@ -331,7 +331,7 @@ export class FinancialParsingService {
       // 检查是否有 NEED_MORE_INFO 类型需要特殊处理
       const events = skillResponse.events.map((event: any) => {
         // 保留原有的事件类型，不做转换
-        if (['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'HOLDING_UPDATE', 'BUDGET', 'NEED_MORE_INFO', 'NULL_STATEMENT'].includes(event.event_type)) {
+        if (['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'HOLDING_UPDATE', 'BUDGET', 'AUTO_PAYMENT', 'NEED_MORE_INFO', 'NULL_STATEMENT'].includes(event.event_type)) {
           return event;
         }
         return event;

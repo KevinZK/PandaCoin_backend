@@ -207,7 +207,7 @@ export class AuthService {
       await tx.creditCard.deleteMany({ where: { userId } });
       // 删除预算
       await tx.budget.deleteMany({ where: { userId } });
-      // 删除自动还款
+      // 删除自动扣款
       await tx.autoPayment.deleteMany({ where: { userId } });
       // 删除自动入账
       await tx.autoIncome.deleteMany({ where: { userId } });

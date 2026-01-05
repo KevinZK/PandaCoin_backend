@@ -51,10 +51,10 @@ export class CreateAccountDto {
   @IsString()
   institutionName?: string; // 贷款机构
 
-  // 自动还款配置
+  // 自动扣款配置
   @IsOptional()
   @IsBoolean()
-  autoRepayment?: boolean; // 是否启用自动还款
+  autoRepayment?: boolean; // 是否启用自动扣款
 
   @IsOptional()
   @IsString()
@@ -109,7 +109,7 @@ export class UpdateAccountDto {
   @IsString()
   institutionName?: string;
 
-  // 自动还款配置
+  // 自动扣款配置
   @IsOptional()
   @IsBoolean()
   autoRepayment?: boolean;

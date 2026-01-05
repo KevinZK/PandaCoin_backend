@@ -22,7 +22,7 @@ export class CreateCreditCardDto {
   @IsString()
   currency?: string;
 
-  // 自动还款配置
+  // 自动扣款配置
   @IsOptional()
   @IsBoolean()
   autoRepayment?: boolean;
@@ -70,7 +70,7 @@ export class UpdateCreditCardDto {
   @IsString()
   currency?: string;
 
-  // 自动还款配置
+  // 自动扣款配置
   @IsOptional()
   @IsBoolean()
   autoRepayment?: boolean;
