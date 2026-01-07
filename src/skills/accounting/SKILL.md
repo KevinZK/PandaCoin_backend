@@ -98,7 +98,15 @@
 - 提到信用卡名称 → 匹配用户信用卡
 - 无明确支付方式 → 不指定，让用户选择
 
-### 6. 置信度评估
+### 6. 多笔交易识别（关键）
+**当用户在一句话中提到多笔消费/收入时，必须生成多个 TRANSACTION 事件**
+- "午饭35，打车15" → 两条 TRANSACTION
+- "早餐10块、午餐25、晚餐40" → 三条 TRANSACTION
+- "工资8000，奖金2000" → 两条 TRANSACTION
+- 识别关键词：逗号分隔、"和"、"还有"、"另外"
+- 每笔交易独立提取金额、分类、描述
+
+### 7. 置信度评估
 - 信息完整明确（金额+商户+日期） → 0.9-1.0
 - 需要推断部分信息 → 0.7-0.9
 - 信息模糊或缺失 → 0.5-0.7
@@ -185,7 +193,39 @@ Output:
 }
 ```
 
-### Example 2: 缺少金额
+### Example 2: 多笔交易（关键示例）
+Input: "我今天午饭消费了35，打车消费了15"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "TRANSACTION",
+      "data": {
+        "transaction_type": "EXPENSE",
+        "amount": 35.00,
+        "currency": "CNY",
+        "category": "FOOD",
+        "note": "午饭",
+        "date": "2026-01-04"
+      }
+    },
+    {
+      "event_type": "TRANSACTION",
+      "data": {
+        "transaction_type": "EXPENSE",
+        "amount": 15.00,
+        "currency": "CNY",
+        "category": "TRANSPORT",
+        "note": "打车",
+        "date": "2026-01-04"
+      }
+    }
+  ]
+}
+```
+
+### Example 3: 缺少金额
 Input: "今天打车去公司"
 Output:
 ```json
@@ -201,7 +241,7 @@ Output:
 }
 ```
 
-### Example 3: 收入记录
+### Example 4: 收入记录
 Input: "收到工资8000"
 Output:
 ```json
@@ -222,7 +262,7 @@ Output:
 }
 ```
 
-### Example 4: 车贷（资产声明）
+### Example 5: 车贷（资产声明）
 Input: "我有一笔180000的车贷"
 Output:
 ```json
@@ -242,7 +282,7 @@ Output:
 }
 ```
 
-### Example 5: 房贷（带详细信息）
+### Example 6: 房贷（带详细信息）
 Input: "我有200万的房贷，30年期，利率3.1%，每月还8500"
 Output:
 ```json
@@ -265,7 +305,7 @@ Output:
 }
 ```
 
-### Example 6: 银行存款
+### Example 7: 银行存款
 Input: "我工商银行有63000块钱"
 Output:
 ```json
@@ -286,7 +326,7 @@ Output:
 }
 ```
 
-### Example 7: 信用卡配置
+### Example 8: 信用卡配置
 Input: "我有一张招商银行信用卡尾号2323，额度84000，目前已用325"
 Output:
 ```json
@@ -308,7 +348,7 @@ Output:
 }
 ```
 
-### Example 8: 买股票
+### Example 9: 买股票
 Input: "今天买了200股茅台，成本价1800"
 Output:
 ```json
@@ -330,7 +370,7 @@ Output:
 }
 ```
 
-### Example 9: 买股票缺少价格（追问）
+### Example 10: 买股票缺少价格（追问）
 Input: "买了200股航天动力"
 Output:
 ```json
@@ -354,7 +394,7 @@ Output:
 }
 ```
 
-### Example 10: 月度预算
+### Example 11: 月度预算
 Input: "这个月餐饮预算2000"
 Output:
 ```json
@@ -376,7 +416,7 @@ Output:
 }
 ```
 
-### Example 11: 旅游计划预算
+### Example 12: 旅游计划预算
 Input: "我计划三月份去意大利游玩预算20000"
 Output:
 ```json
@@ -399,7 +439,7 @@ Output:
 }
 ```
 
-### Example 12: 订阅服务（缺少扣款日期，需追问）
+### Example 13: 订阅服务（缺少扣款日期，需追问）
 Input: "我每个月订阅finboo app要花费15块"
 Output:
 ```json
@@ -424,7 +464,7 @@ Output:
 }
 ```
 
-### Example 13: 订阅服务（信息完整）
+### Example 14: 订阅服务（信息完整）
 Input: "我订阅了Netflix每月88块，每月5号扣费"
 Output:
 ```json
@@ -445,7 +485,7 @@ Output:
 }
 ```
 
-### Example 14: 会员费
+### Example 15: 会员费
 Input: "京东Plus会员每年168，每年1月15号扣"
 Output:
 ```json
