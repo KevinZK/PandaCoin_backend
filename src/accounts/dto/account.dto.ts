@@ -51,6 +51,11 @@ export class CreateAccountDto {
   @IsString()
   institutionName?: string; // 贷款机构
 
+  // 银行卡/账户标识（尾号）
+  @IsOptional()
+  @IsString()
+  cardIdentifier?: string;
+
   // 自动扣款配置
   @IsOptional()
   @IsBoolean()
@@ -108,6 +113,11 @@ export class UpdateAccountDto {
   @IsOptional()
   @IsString()
   institutionName?: string;
+
+  // 银行卡/账户标识（尾号）
+  @IsOptional()
+  @IsString()
+  cardIdentifier?: string;
 
   // 自动扣款配置
   @IsOptional()

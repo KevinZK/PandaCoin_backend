@@ -27,6 +27,8 @@ export class AccountsService {
           balance: dto.balance,
           currency: dto.currency || 'CNY',
           userId,
+          // 银行卡/账户标识（尾号）
+          cardIdentifier: dto.cardIdentifier,
           // 贷款专用字段
           loanTermMonths: dto.loanTermMonths,
           interestRate: dto.interestRate,
@@ -163,6 +165,7 @@ export class AccountsService {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.balance !== undefined && { balance: dto.balance }),
+        ...(dto.cardIdentifier !== undefined && { cardIdentifier: dto.cardIdentifier }),
         ...(dto.loanTermMonths !== undefined && { loanTermMonths: dto.loanTermMonths }),
         ...(dto.interestRate !== undefined && { interestRate: dto.interestRate }),
         ...(dto.monthlyPayment !== undefined && { monthlyPayment: dto.monthlyPayment }),

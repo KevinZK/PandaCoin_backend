@@ -66,6 +66,11 @@
 - **CREDIT_CARD_UPDATE 缺还款日**："招商信用卡额度5万" → 追问"请问还款日是每月几号？"
 - **BUDGET 缺金额**："设置餐饮预算" → 追问"请问预算金额是多少？"
 
+**不应该追问的场景（非常重要）**：
+- **ASSET_UPDATE 银行存款信息完整**："我的花旗银行储蓄卡有4000美金" → 已有银行名称+账户类型+金额+货币，**直接返回 ASSET_UPDATE，不要追问**
+- **ASSET_UPDATE 资产声明信息完整**："我支付宝月10000元" → 已有账户类型+金额，**直接返回 ASSET_UPDATE**
+- **确认性回复应该当作肯定**：用户回复"是的"、"对"、"没错"、"确认" → 表示用户确认上文信息正确，不要再次追问
+
 追问时必须返回 partial_data 包含已解析的信息，以便用户回复后合并。
 
 **NULL_STATEMENT**：无法识别的输入
@@ -144,6 +149,7 @@
               "source_account": { "type": "string" },
               "target_account": { "type": "string" },
               "card_identifier": { "type": "string" },
+              "is_identifier_update": { "type": "boolean" },
               "credit_limit": { "type": "number" },
               "outstanding_balance": { "type": "number" },
               "repayment_due_date": { "type": "string" },
@@ -325,6 +331,131 @@ Output:
   ]
 }
 ```
+
+### Example 7b: 外币银行存款（建议添加尾号但不强制追问）
+Input: "我的花旗银行储蓄卡有4000美金"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "ASSET_UPDATE",
+      "data": {
+        "name": "花旗银行储蓄卡",
+        "asset_type": "BANK",
+        "institution_name": "花旗银行",
+        "amount": 4000,
+        "currency": "USD",
+        "date": "2026-01-04",
+        "note": "建议添加卡号尾号以区分同一银行的不同卡片，例如：花旗银行储蓄卡尾号1234"
+      }
+    }
+  ]
+}
+```
+注意：用户已明确提供了银行名称、账户类型、金额和货币，信息完整，**直接返回 ASSET_UPDATE 不要追问**。但在 note 中建议用户下次提供卡号尾号以便区分同一银行的不同卡片。
+
+### Example 7b-2: 带尾号的银行存款（最佳实践）
+Input: "我的花旗银行储蓄卡尾号8856有4000美金"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "ASSET_UPDATE",
+      "data": {
+        "name": "花旗银行储蓄卡(8856)",
+        "asset_type": "BANK",
+        "institution_name": "花旗银行",
+        "card_identifier": "8856",
+        "amount": 4000,
+        "currency": "USD",
+        "date": "2026-01-04"
+      }
+    }
+  ]
+}
+```
+
+### Example 7b-3: 尾号在前的表达方式（重要）
+Input: "我有一张尾号是1234的花旗银行储蓄卡，里面的余额是36000美金"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "ASSET_UPDATE",
+      "data": {
+        "name": "花旗银行储蓄卡(1234)",
+        "asset_type": "BANK",
+        "institution_name": "花旗银行",
+        "card_identifier": "1234",
+        "amount": 36000,
+        "currency": "USD",
+        "date": "2026-01-04"
+      }
+    }
+  ]
+}
+```
+**重要**：无论尾号出现在句子的什么位置（"尾号1234"、"尾号是1234"、"尾号是1234的"、"卡号后四位1234"），都必须提取到 card_identifier 字段中。
+
+### Example 7b-4: 其他尾号表达方式
+以下表达都应该提取 card_identifier:
+- "尾号1234的招商银行卡" → card_identifier: "1234"
+- "卡号后四位是5678的工商银行储蓄卡" → card_identifier: "5678"  
+- "招商银行储蓄卡(9999)" → card_identifier: "9999"
+- "我的6789卡有5000" → card_identifier: "6789"（当上下文明确是卡号时）
+
+注意：用户提供了卡号尾号，将其保存在 card_identifier 字段中，并在 name 中包含尾号以便识别。
+
+### Example 7b-5: 为已有账户添加尾号（更新场景）
+当用户只提供尾号信息而没有金额时，表示要为已有账户添加唯一标识。
+
+Input: "我的花旗银行储蓄卡尾号是1234"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "ASSET_UPDATE",
+      "data": {
+        "name": "花旗银行储蓄卡(1234)",
+        "asset_type": "BANK",
+        "institution_name": "花旗银行",
+        "card_identifier": "1234",
+        "is_identifier_update": true
+      }
+    }
+  ]
+}
+```
+注意：当用户只说了账户名和尾号，没有提及金额时，添加 `is_identifier_update: true` 标记，表示这是对已有账户的尾号更新，而不是创建新账户。前端会根据此标记匹配已有账户并更新其 card_identifier。
+
+### Example 7c: 确认性回复（不应该追问）
+当上下文中已经有资产信息，用户回复"是的"、"对"、"没错"表示确认时，应该直接创建资产，不要再追问。
+
+上下文: 用户之前说"我的花旗银行储蓄卡有4000美金"
+Input: "是的"
+Output:
+```json
+{
+  "events": [
+    {
+      "event_type": "ASSET_UPDATE",
+      "data": {
+        "name": "花旗银行储蓄卡",
+        "asset_type": "BANK",
+        "institution_name": "花旗银行",
+        "amount": 4000,
+        "currency": "USD",
+        "date": "2026-01-04"
+      }
+    }
+  ]
+}
+```
+注意：用户说"是的"是对上文信息的确认，应该直接执行创建，**绝对不要再追问金额或其他信息**。
 
 ### Example 8: 信用卡配置
 Input: "我有一张招商银行信用卡尾号2323，额度84000，目前已用325"

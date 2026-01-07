@@ -100,6 +100,9 @@ model Account {
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
   
+  // 银行卡/账户标识（尾号）
+  cardIdentifier    String?  @map("card_identifier")     // 卡号尾号，用于区分同一银行的多张卡
+  
   // 贷款专用字段 (type = LOAN 或 MORTGAGE 时使用)
   loanTermMonths    Int?     @map("loan_term_months")    // 贷款期限(月)
   interestRate      Float?   @map("interest_rate")       // 年利率 (%)
