@@ -130,7 +130,10 @@ export class RecordsService {
     startDate?: string;
     endDate?: string;
   }) {
-    const where: any = { userId };
+    const where: any = {
+      userId,
+      deletedAt: null, // 只返回未删除的记录
+    };
 
     if (filters?.type) {
       where.type = filters.type;
@@ -159,6 +162,7 @@ export class RecordsService {
             id: true,
             name: true,
             type: true,
+            deletedAt: true, // 包含账户删除状态，用于前端显示标签
           },
         },
         targetAccount: {
@@ -166,6 +170,7 @@ export class RecordsService {
             id: true,
             name: true,
             type: true,
+            deletedAt: true,
           },
         },
       },
@@ -176,13 +181,14 @@ export class RecordsService {
   // 获取单条记录
   async findOne(id: string, userId: string) {
     const record = await this.prisma.record.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null }, // 只查找未删除的记录
       include: {
         account: {
           select: {
             id: true,
             name: true,
             type: true,
+            deletedAt: true,
           },
         },
         targetAccount: {
@@ -190,6 +196,7 @@ export class RecordsService {
             id: true,
             name: true,
             type: true,
+            deletedAt: true,
           },
         },
       },
@@ -241,7 +248,7 @@ export class RecordsService {
     });
   }
 
-  // 删除记录
+  // 删除记录（软删除）
   async remove(id: string, userId: string) {
     const record = await this.findOne(id, userId);
 
@@ -262,8 +269,10 @@ export class RecordsService {
       );
     }
 
-    return this.prisma.record.delete({
+    // 软删除：设置 deletedAt 而非真正删除
+    return this.prisma.record.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 

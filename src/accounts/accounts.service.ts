@@ -139,15 +139,49 @@ export class AccountsService {
   }
 
   async findAll(userId: string) {
-    return this.prisma.account.findMany({
+    // 1. 获取非信用卡的账户（排除旧的 CREDIT_CARD 类型，过滤已删除）
+    const accounts = await this.prisma.account.findMany({
+      where: {
+        userId,
+        type: { not: 'CREDIT_CARD' },
+        deletedAt: null, // 只返回未删除的账户
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // 2. 获取信用卡数据
+    const creditCards = await this.prisma.creditCard.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
+
+    // 3. 转换信用卡为账户格式
+    const creditCardAsAccounts = creditCards.map((card) => ({
+      id: card.id,
+      name: card.name,
+      type: 'CREDIT_CARD',
+      balance: card.currentBalance, // 待还金额作为负债
+      currency: card.currency,
+      userId: card.userId,
+      createdAt: card.createdAt,
+      updatedAt: card.updatedAt,
+      cardIdentifier: card.cardIdentifier,
+      institutionName: card.institutionName,
+      // 贷款字段设为 null
+      loanTermMonths: null,
+      interestRate: null,
+      monthlyPayment: null,
+      repaymentDay: null,
+      loanStartDate: null,
+    }));
+
+    // 4. 合并返回
+    return [...accounts, ...creditCardAsAccounts];
   }
 
   async findOne(id: string, userId: string) {
     const account = await this.prisma.account.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null }, // 只查找未删除的账户
     });
 
     if (!account) {
@@ -179,19 +213,30 @@ export class AccountsService {
   async remove(id: string, userId: string) {
     await this.findOne(id, userId); // 检查权限
 
-    return this.prisma.account.delete({
+    // 软删除：设置 deletedAt 而非真正删除
+    return this.prisma.account.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 
-  // 计算总资产 (包含持仓市值)
+  // 计算总资产 (包含持仓市值和信用卡负债)
   async getTotalAssets(userId: string) {
-    // 获取所有账户
+    // 获取所有账户（排除旧的 CREDIT_CARD 类型，过滤已删除）
     const accounts = await this.prisma.account.findMany({
-      where: { userId },
+      where: {
+        userId,
+        type: { not: 'CREDIT_CARD' },
+        deletedAt: null, // 只计算未删除的账户
+      },
       include: {
         holdings: true, // 包含持仓
       },
+    });
+
+    // 获取信用卡数据
+    const creditCards = await this.prisma.creditCard.findMany({
+      where: { userId },
     });
 
     // 获取所有持仓
@@ -199,9 +244,15 @@ export class AccountsService {
       where: { userId },
     });
 
-    // 计算账户余额总计
+    // 计算账户余额总计（不含信用卡）
     const cashTotal = accounts.reduce(
       (sum: number, acc: any) => sum + Number(acc.balance),
+      0,
+    );
+
+    // 计算信用卡待还金额总计
+    const creditCardTotal = creditCards.reduce(
+      (sum: number, card: any) => sum + Number(card.currentBalance),
       0,
     );
 
@@ -233,13 +284,36 @@ export class AccountsService {
       };
     });
 
+    // 将信用卡转换为账户格式并添加到列表
+    const creditCardAsAccounts = creditCards.map((card: any) => ({
+      id: card.id,
+      name: card.name,
+      type: 'CREDIT_CARD',
+      balance: card.currentBalance,
+      currency: card.currency,
+      userId: card.userId,
+      createdAt: card.createdAt,
+      updatedAt: card.updatedAt,
+      cardIdentifier: card.cardIdentifier,
+      institutionName: card.institutionName,
+      loanTermMonths: null,
+      interestRate: null,
+      monthlyPayment: null,
+      repaymentDay: null,
+      loanStartDate: null,
+      holdingsCount: 0,
+      holdingsValue: 0,
+      totalValue: card.currentBalance,
+    }));
+
     return {
-      total: cashTotal + holdingsMarketValue,
+      total: cashTotal + holdingsMarketValue - creditCardTotal, // 总资产减去信用卡负债
       cashTotal,
       holdingsMarketValue,
       holdingsCost,
+      creditCardTotal, // 新增：信用卡待还总额
       unrealizedPnL: holdingsMarketValue - holdingsCost,
-      accounts: accountsWithHoldings,
+      accounts: [...accountsWithHoldings, ...creditCardAsAccounts],
     };
   }
 }
