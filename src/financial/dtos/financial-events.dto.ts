@@ -337,6 +337,24 @@ export class NullStatementData {
   error_message?: string;
 }
 
+// 智能追问数据（Function Calling 使用）
+export class NeedMoreInfoData {
+  @IsString()
+  question: string;  // 要问用户的问题
+
+  @IsArray()
+  @IsOptional()
+  missing_fields?: string[];  // 缺少的字段列表
+
+  @IsString()
+  @IsOptional()
+  context?: string;  // 已理解的上下文信息
+
+  @IsArray()
+  @IsOptional()
+  suggested_options?: string[];  // 建议的选项
+}
+
 // 自动扣款类型
 export enum AutoPaymentType {
   SUBSCRIPTION = 'SUBSCRIPTION',     // 订阅服务
@@ -385,7 +403,9 @@ export type FinancialEventData =
   | AssetUpdateData
   | CreditCardUpdateData
   | BudgetData
-  | NullStatementData;
+  | NullStatementData
+  | NeedMoreInfoData
+  | AutoPaymentData;
 
 // ==================== Main DTOs ====================
 
@@ -405,7 +425,22 @@ export class FinancialEventsResponseDto {
 
 // ==================== Request DTO ====================
 
+// 对话历史消息
+export class ChatMessageDto {
+  @IsString()
+  role: 'user' | 'assistant';
+
+  @IsString()
+  content: string;
+}
+
 export class ParseFinancialRequestDto {
   @IsString()
   text: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ChatMessageDto)
+  conversationHistory?: ChatMessageDto[];  // 多轮对话历史
 }

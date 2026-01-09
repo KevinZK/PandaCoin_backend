@@ -12,15 +12,24 @@ import { LoggerService } from '../../common/logger/logger.service';
 /**
  * Qwen Provider (国际版)
  * 使用阿里云通义千问进行财务语句解析
- * 特性：需从 LLM 输出中提取 JSON（正则/字符串清洗）
+ *
+ * 特性：
+ * - 使用 OpenAI 兼容接口
+ * - 使用 JSON Object 结构化输出
+ *
+ * 注意：
+ * - Function Calling（智能追问）由 skill-executor.service.ts 处理
+ * - 此 Provider 提供通用的 JSON Object 解析接口
+ * - accounting 技能通过 Skills 系统使用 Function Calling
  */
 @Injectable()
 export class QwenProvider implements FinancialParsingProvider {
   readonly name = PROVIDER_NAMES.QWEN;
   private readonly apiKey: string;
+  // 使用 OpenAI 兼容接口以支持 JSON Schema
   private readonly endpoint =
-    'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
-  private readonly model = 'qwen-max';
+    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+  private readonly model = 'qwen3-max';
   private readonly timeout = 8000;
 
   constructor(
@@ -49,23 +58,20 @@ export class QwenProvider implements FinancialParsingProvider {
         this.endpoint,
         {
           model: this.model,
-          input: {
-            messages: [
-              {
-                role: 'system',
-                content: systemPrompt,
-              },
-              {
-                role: 'user',
-                content: text,
-              },
-            ],
-          },
-          parameters: {
-            result_format: 'message',
-            temperature: 0.1,
-            max_tokens: 2048,
-          },
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            {
+              role: 'user',
+              content: text,
+            },
+          ],
+          temperature: 0.1,
+          max_tokens: 2048,
+          // 启用 JSON Object 结构化输出
+          response_format: { type: 'json_object' },
         },
         {
           timeout: this.timeout,
@@ -76,18 +82,15 @@ export class QwenProvider implements FinancialParsingProvider {
         },
       );
 
-      // 提取响应内容
-      const content =
-        response.data?.output?.choices?.[0]?.message?.content ||
-        response.data?.output?.text;
+      // OpenAI 兼容格式的响应
+      const content = response.data?.choices?.[0]?.message?.content;
 
       if (!content) {
         throw new Error('Empty response from Qwen');
       }
 
-      // 清理并提取 JSON
-      const cleanedContent = this.extractJson(content);
-      const parsed = JSON.parse(cleanedContent) as FinancialEventsResponseDto;
+      // JSON Object 模式下直接解析，无需清理
+      const parsed = JSON.parse(content) as FinancialEventsResponseDto;
 
       this.logger.debug(
         `Qwen parsed ${parsed.events.length} events`,

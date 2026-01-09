@@ -14,6 +14,7 @@ export class CreditCardsService {
         institutionName: dto.institutionName,
         cardIdentifier: dto.cardIdentifier,
         creditLimit: dto.creditLimit,
+        currentBalance: dto.currentBalance ?? 0,  // 待还金额，默认0
         repaymentDueDate: dto.repaymentDueDate,
         currency: dto.currency || 'CNY',
         userId,

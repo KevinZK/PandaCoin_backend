@@ -18,6 +18,12 @@ export interface SkillExample {
   output: object;
 }
 
+// 对话历史消息
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 // 技能上下文
 export interface SkillContext {
   // 用户信息
@@ -44,6 +50,9 @@ export interface SkillContext {
   // 时间信息
   currentDate: string;
   daysInMonth: number;
+
+  // 多轮对话历史（用于 Function Calling 智能追问）
+  conversationHistory?: ChatMessage[];
 
   // 其他上下文
   [key: string]: any;

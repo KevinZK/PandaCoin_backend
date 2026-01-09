@@ -37,11 +37,13 @@ export class FinancialParsingService {
    * @param text 用户输入的自然语言文本
    * @param userId 用户ID
    * @param headers HTTP请求头
+   * @param conversationHistory 多轮对话历史（用于智能追问上下文）
    */
   async parseFinancialStatement(
     text: string,
     userId: string,
     headers: Record<string, string>,
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
   ): Promise<FinancialEventsResponseDto> {
     const startTime = Date.now();
     const currentDate = this.getCurrentDate();
@@ -55,7 +57,7 @@ export class FinancialParsingService {
 
     // 使用 Skill 系统
     if (this.useSkillSystem) {
-      return this.parseWithSkillSystem(text, userId, region, currentDate);
+      return this.parseWithSkillSystem(text, userId, region, currentDate, conversationHistory);
     }
 
     // 使用传统 Provider 链
@@ -154,6 +156,7 @@ export class FinancialParsingService {
     userId: string,
     region: RegionCode,
     currentDate: string,
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
   ): Promise<FinancialEventsResponseDto> {
     const startTime = Date.now();
 
@@ -175,6 +178,7 @@ export class FinancialParsingService {
           userId,
           currentDate,
           daysInMonth: new Date(currentDate.slice(0, 7) + '-01').getDate(),
+          conversationHistory,  // 传递对话历史用于多轮追问
         },
       });
 

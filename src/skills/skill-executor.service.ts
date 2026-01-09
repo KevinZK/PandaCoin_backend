@@ -10,6 +10,7 @@ import {
   SkillType,
 } from './skills.types';
 import { LoggerService } from '../common/logger/logger.service';
+import { FINANCIAL_TOOLS, FUNCTION_CALLING_SYSTEM_PROMPT } from '../financial/providers/function-calling-tools';
 
 /**
  * 技能执行器 - 执行技能并返回结果
@@ -83,7 +84,15 @@ export class SkillExecutorService {
   }
 
   /**
-   * 使用 AI 执行技能（支持 Qwen）
+   * 使用 AI 执行技能
+   *
+   * 架构说明：
+   * - accounting 技能使用 Function Calling 模式（智能追问）
+   * - 其他技能使用 JSON Object 模式（SKILL.md 规则）
+   *
+   * Function Calling 优势：
+   * - LLM 自主决定何时追问，无需穷举规则
+   * - 更自然的对话体验
    */
   private async executeSkillWithAI(
     skill: SkillDefinition,
@@ -91,8 +100,14 @@ export class SkillExecutorService {
     context: SkillContext,
   ): Promise<{ response: any; confidence: number; rawResponse: string }> {
     const qwenApiKey = this.configService.get<string>('QWEN_API_KEY');
+    const useFunctionCalling = this.configService.get<string>('USE_FUNCTION_CALLING', 'true') === 'true';
 
-    // 构建完整的 Prompt
+    // 对于 accounting 技能，使用 Function Calling（智能追问）
+    if (skill.name === 'accounting' && useFunctionCalling && qwenApiKey) {
+      return this.executeWithFunctionCalling(userMessage, context, qwenApiKey);
+    }
+
+    // 其他技能使用 JSON Object 模式
     const prompt = this.buildPrompt(skill, userMessage, context);
 
     if (!qwenApiKey) {
@@ -102,8 +117,9 @@ export class SkillExecutorService {
     }
 
     try {
+      // 使用 OpenAI 兼容接口 + JSON Object 结构化输出
       const response = await fetch(
-        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+        'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
         {
           method: 'POST',
           headers: {
@@ -111,34 +127,27 @@ export class SkillExecutorService {
             Authorization: `Bearer ${qwenApiKey}`,
           },
           body: JSON.stringify({
-            model: 'qwen-max',
-            input: {
-              messages: [
-                { role: 'system', content: prompt },
-                { role: 'user', content: userMessage },
-              ],
-            },
-            parameters: {
-              result_format: 'message',
-              temperature: 0.1,
-              max_tokens: 2048,
-            },
+            model: 'qwen3-max',
+            messages: [
+              { role: 'system', content: prompt },
+              { role: 'user', content: userMessage },
+            ],
+            temperature: 0.1,
+            max_tokens: 2048,
+            response_format: { type: 'json_object' },
           }),
         },
       );
 
       const data = await response.json();
-      const aiText =
-        data?.output?.choices?.[0]?.message?.content ||
-        data?.output?.text ||
-        '';
+      // OpenAI 兼容格式的响应
+      const aiText = data?.choices?.[0]?.message?.content || '';
 
       this.logger.debug(`Qwen 返回: ${aiText.substring(0, 200)}...`, 'SkillExecutor');
 
-      // 提取 JSON
-      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const result = JSON.parse(jsonMatch[0]);
+      // JSON Object 模式下直接解析
+      if (aiText) {
+        const result = JSON.parse(aiText);
         return {
           response: result,
           confidence: 0.85,
@@ -146,9 +155,9 @@ export class SkillExecutorService {
         };
       }
 
-      // 如果无法解析 JSON，返回原始文本
+      // 空响应
       return {
-        response: { summary: aiText },
+        response: { summary: '' },
         confidence: 0.5,
         rawResponse: aiText,
       };
@@ -217,6 +226,256 @@ ${examples}
     }
 
     return parts.join('\n');
+  }
+
+  /**
+   * 使用 Function Calling 执行（智能追问模式）
+   *
+   * 优势：
+   * - LLM 自主决定何时调用 ask_clarification
+   * - 不需要在 prompt 中穷举所有追问场景
+   * - 更自然的对话体验
+   */
+  private async executeWithFunctionCalling(
+    userMessage: string,
+    context: SkillContext,
+    apiKey: string,
+  ): Promise<{ response: any; confidence: number; rawResponse: string }> {
+    try {
+      this.logger.debug('🔧 使用 Function Calling 模式', 'SkillExecutor');
+
+      // 构建消息列表，包含对话历史
+      const messages: Array<{ role: string; content: string }> = [
+        {
+          role: 'system',
+          content: `${FUNCTION_CALLING_SYSTEM_PROMPT}\n\n当前日期: ${context.currentDate}\n用户账户: ${JSON.stringify(context.accounts || [])}`,
+        },
+      ];
+
+      // 添加对话历史（如果有）
+      if (context.conversationHistory && context.conversationHistory.length > 0) {
+        for (const msg of context.conversationHistory) {
+          messages.push({ role: msg.role, content: msg.content });
+        }
+        this.logger.debug(`📜 包含 ${context.conversationHistory.length} 条对话历史`, 'SkillExecutor');
+      }
+
+      // 添加当前用户消息
+      messages.push({ role: 'user', content: userMessage });
+
+      const response = await fetch(
+        'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'qwen3-max',
+            messages,
+            tools: FINANCIAL_TOOLS,
+            tool_choice: 'auto',
+            temperature: 0.1,
+            max_tokens: 2048,
+          }),
+        },
+      );
+
+      const data = await response.json();
+      const message = data?.choices?.[0]?.message;
+
+      this.logger.debug(`Function Calling 响应: ${JSON.stringify(message).substring(0, 300)}...`, 'SkillExecutor');
+
+      // 检查是否有 tool_calls
+      if (message?.tool_calls && message.tool_calls.length > 0) {
+        const events = this.convertToolCallsToEvents(message.tool_calls, context.currentDate);
+        return {
+          response: events,
+          confidence: 0.9,
+          rawResponse: JSON.stringify(message),
+        };
+      }
+
+      // 如果没有 tool_calls，尝试解析 content
+      if (message?.content) {
+        try {
+          const parsed = JSON.parse(message.content);
+          return {
+            response: parsed,
+            confidence: 0.85,
+            rawResponse: message.content,
+          };
+        } catch {
+          return {
+            response: { events: [] },
+            confidence: 0.5,
+            rawResponse: message.content,
+          };
+        }
+      }
+
+      return {
+        response: { events: [] },
+        confidence: 0.5,
+        rawResponse: '',
+      };
+    } catch (error) {
+      this.logger.error('Function Calling 失败', error.stack, 'SkillExecutor');
+      throw error;
+    }
+  }
+
+  /**
+   * 将 tool_calls 转换为事件格式
+   */
+  private convertToolCallsToEvents(
+    toolCalls: Array<{ function: { name: string; arguments: string } }>,
+    currentDate: string,
+  ): { events: any[] } {
+    const events = [];
+
+    for (const toolCall of toolCalls) {
+      const funcName = toolCall.function.name;
+      let args: Record<string, any>;
+
+      try {
+        args = JSON.parse(toolCall.function.arguments);
+      } catch {
+        this.logger.warn(`解析 tool arguments 失败: ${toolCall.function.arguments}`, 'SkillExecutor');
+        continue;
+      }
+
+      switch (funcName) {
+        case 'record_transaction':
+          events.push({
+            event_type: 'TRANSACTION',
+            data: {
+              transaction_type: args.transaction_type || 'EXPENSE',
+              amount: args.amount,
+              currency: args.currency || 'CNY',
+              category: args.category || 'OTHER',
+              note: args.note,
+              date: args.date || currentDate,
+              source_account: args.source_account,
+              target_account: args.target_account,
+              card_identifier: args.card_identifier,
+            },
+          });
+          break;
+
+        case 'update_asset':
+          events.push({
+            event_type: 'ASSET_UPDATE',
+            data: {
+              asset_type: args.asset_type || 'BANK',
+              name: args.name,
+              amount: args.amount,
+              currency: args.currency || 'CNY',
+              institution_name: args.institution_name,
+              card_identifier: args.card_identifier,
+              loan_term_months: args.loan_term_months,
+              interest_rate: args.interest_rate,
+              monthly_payment: args.monthly_payment,
+              repayment_day: args.repayment_day,
+              auto_repayment: args.auto_repayment,
+              source_account: args.source_account,
+              date: currentDate,
+            },
+          });
+          break;
+
+        case 'update_credit_card':
+          events.push({
+            event_type: 'CREDIT_CARD_UPDATE',
+            data: {
+              name: args.name,
+              institution_name: args.institution_name,
+              credit_limit: args.credit_limit,
+              outstanding_balance: args.outstanding_balance,
+              repayment_due_date: args.repayment_due_date,
+              card_identifier: args.card_identifier,
+              auto_repayment: args.auto_repayment,
+              repayment_type: args.repayment_type,
+              source_account: args.source_account,
+              date: currentDate,
+            },
+          });
+          break;
+
+        case 'update_holding':
+          events.push({
+            event_type: 'HOLDING_UPDATE',
+            data: {
+              holding_action: args.holding_action || 'BUY',
+              holding_type: args.holding_type || 'STOCK',
+              name: args.name,
+              ticker_code: args.ticker_code,
+              quantity: args.quantity,
+              price: args.price,
+              currency: args.currency || 'CNY',
+              account_name: args.account_name,
+              date: args.date || currentDate,
+            },
+          });
+          break;
+
+        case 'set_budget':
+          events.push({
+            event_type: 'BUDGET',
+            data: {
+              budget_action: 'CREATE_BUDGET',
+              name: args.name,
+              amount: args.amount,
+              currency: args.currency || 'CNY',
+              category: args.category,
+            },
+          });
+          break;
+
+        case 'set_auto_payment':
+          events.push({
+            event_type: 'AUTO_PAYMENT',
+            data: {
+              name: args.name,
+              amount: args.amount,
+              payment_type: args.payment_type || 'SUBSCRIPTION',
+              day_of_month: args.day_of_month,
+              source_account: args.source_account,
+              category: args.category || 'SUBSCRIPTION',
+            },
+          });
+          break;
+
+        case 'ask_clarification':
+          events.push({
+            event_type: 'NEED_MORE_INFO',
+            data: {
+              original_intent: args.original_intent,
+              question: args.question,
+              missing_fields: args.missing_fields,
+              partial_data: args.partial_data,
+              picker_type: args.picker_type,
+              suggested_options: args.suggested_options,
+            },
+          });
+          break;
+
+        case 'no_action':
+          events.push({
+            event_type: 'NULL_STATEMENT',
+            data: {
+              error_message: args.response,
+            },
+          });
+          break;
+
+        default:
+          this.logger.warn(`未知函数: ${funcName}`, 'SkillExecutor');
+      }
+    }
+
+    return { events };
   }
 
   /**

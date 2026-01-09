@@ -15,6 +15,11 @@ export class CreateCreditCardDto {
   creditLimit: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  currentBalance?: number;  // 待还金额
+
+  @IsOptional()
   @IsString()
   repaymentDueDate?: string;
 

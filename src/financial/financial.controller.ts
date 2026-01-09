@@ -47,6 +47,7 @@ export class FinancialController {
       body.text,
       userId,
       headers,
+      body.conversationHistory,  // 传递对话历史
     );
 
     return ResponseDto.success(result, '解析成功');
