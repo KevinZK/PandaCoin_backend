@@ -29,23 +29,18 @@ export class HoldingsService {
    * 创建持仓（无初始交易）
    */
   async create(userId: string, dto: CreateHoldingDto) {
-    // 验证账户存在且属于用户
-    const account = await this.prisma.account.findFirst({
-      where: { id: dto.accountId, userId },
+    // 验证投资账户存在且属于用户
+    const investment = await this.prisma.investment.findFirst({
+      where: { id: dto.investmentId, userId, deletedAt: null },
     });
 
-    if (!account) {
-      throw new NotFoundException('证券账户不存在');
-    }
-
-    // 验证账户类型为投资类型
-    if (!['INVESTMENT', 'CRYPTO'].includes(account.type)) {
-      throw new BadRequestException('只能在投资账户或加密货币账户下创建持仓');
+    if (!investment) {
+      throw new NotFoundException('投资账户不存在');
     }
 
     return this.prisma.holding.create({
       data: {
-        accountId: dto.accountId,
+        investmentId: dto.investmentId,
         userId,
         name: dto.name,
         displayName: dto.displayName,
@@ -67,15 +62,15 @@ export class HoldingsService {
   async buyNewHolding(userId: string, dto: BuyNewHoldingDto) {
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. 验证账户
-      const account = await tx.account.findFirst({
-        where: { id: dto.accountId, userId },
+      const investment = await tx.investment.findFirst({
+        where: { id: dto.investmentId, userId },
       });
 
-      if (!account) {
-        throw new NotFoundException('证券账户不存在');
+      if (!investment) {
+        throw new NotFoundException('投资账户不存在');
       }
 
-      if (!['INVESTMENT', 'CRYPTO'].includes(account.type)) {
+      if (!['INVESTMENT', 'CRYPTO'].includes(investment.type)) {
         throw new BadRequestException('只能在投资账户或加密货币账户下创建持仓');
       }
 
@@ -83,16 +78,16 @@ export class HoldingsService {
       const totalCost = amount + (dto.fee || 0);
 
       // 2. 检查账户余额
-      if (account.balance < totalCost) {
+      if (investment.balance < totalCost) {
         throw new BadRequestException(
-          `账户余额不足，当前余额: ${account.balance}，需要: ${totalCost}`,
+          `账户余额不足，当前余额: ${investment.balance}，需要: ${totalCost}`,
         );
       }
 
       // 3. 创建持仓
       const holding = await tx.holding.create({
         data: {
-          accountId: dto.accountId,
+          investmentId: dto.investmentId,
           userId,
           name: dto.name,
           displayName: dto.displayName,
@@ -111,7 +106,7 @@ export class HoldingsService {
       const transaction = await tx.holdingTransaction.create({
         data: {
           holdingId: holding.id,
-          accountId: dto.accountId,
+          investmentId: dto.investmentId,
           userId,
           type: 'BUY',
           quantity: dto.quantity,
@@ -128,7 +123,7 @@ export class HoldingsService {
 
       // 5. 扣减账户余额
       await tx.account.update({
-        where: { id: dto.accountId },
+        where: { id: dto.investmentId },
         data: { balance: { decrement: totalCost } },
       });
 
@@ -198,7 +193,7 @@ export class HoldingsService {
     return this.prisma.holding.findMany({
       where: { userId },
       include: {
-        account: {
+        investment: {
           select: { id: true, name: true, type: true, balance: true },
         },
       },
@@ -209,18 +204,18 @@ export class HoldingsService {
   /**
    * 获取指定账户下的持仓
    */
-  async findByAccount(userId: string, accountId: string) {
-    // 验证账户
-    const account = await this.prisma.account.findFirst({
-      where: { id: accountId, userId },
+  async findByInvestment(userId: string, investmentId: string) {
+    // 验证投资账户
+    const investment = await this.prisma.investment.findFirst({
+      where: { id: investmentId, userId, deletedAt: null },
     });
 
-    if (!account) {
-      throw new NotFoundException('账户不存在');
+    if (!investment) {
+      throw new NotFoundException('投资账户不存在');
     }
 
     const holdings = await this.prisma.holding.findMany({
-      where: { accountId, userId },
+      where: { investmentId, userId },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -236,13 +231,13 @@ export class HoldingsService {
     }, 0);
 
     return {
-      account,
+      investment,
       holdings,
       summary: {
-        cashBalance: account.balance,
+        cashBalance: investment.balance,
         holdingsMarketValue: totalMarketValue,
         holdingsCost: totalCost,
-        totalValue: account.balance + totalMarketValue,
+        totalValue: investment.balance + totalMarketValue,
         unrealizedPnL: totalMarketValue - totalCost,
         unrealizedPnLPercent:
           totalCost > 0
@@ -259,7 +254,7 @@ export class HoldingsService {
     const holding = await this.prisma.holding.findFirst({
       where: { id, userId },
       include: {
-        account: {
+        investment: {
           select: { id: true, name: true, type: true },
         },
         transactions: {
@@ -363,22 +358,22 @@ export class HoldingsService {
         throw new NotFoundException('持仓不存在');
       }
 
-      // 获取账户
-      const account = await tx.account.findUnique({
-        where: { id: holding.accountId },
+      // 获取投资账户
+      const investment = await tx.investment.findUnique({
+        where: { id: holding.investmentId },
       });
 
-      if (!account) {
-        throw new NotFoundException('账户不存在');
+      if (!investment) {
+        throw new NotFoundException('投资账户不存在');
       }
 
       const amount = dto.quantity * dto.price;
       const totalCost = amount + (dto.fee || 0);
 
       // 检查账户余额
-      if (account.balance < totalCost) {
+      if (investment.balance < totalCost) {
         throw new BadRequestException(
-          `账户余额不足，当前余额: ${account.balance}，需要: ${totalCost}`,
+          `账户余额不足，当前余额: ${investment.balance}，需要: ${totalCost}`,
         );
       }
 
@@ -402,7 +397,7 @@ export class HoldingsService {
       const transaction = await tx.holdingTransaction.create({
         data: {
           holdingId: dto.holdingId,
-          accountId: holding.accountId,
+          investmentId: holding.investmentId,
           userId,
           type: 'BUY',
           quantity: dto.quantity,
@@ -417,9 +412,9 @@ export class HoldingsService {
         },
       });
 
-      // 扣减账户余额
-      await tx.account.update({
-        where: { id: holding.accountId },
+      // 扣减投资账户余额
+      await tx.investment.update({
+        where: { id: holding.investmentId },
         data: { balance: { decrement: totalCost } },
       });
 
@@ -466,7 +461,7 @@ export class HoldingsService {
       const transaction = await tx.holdingTransaction.create({
         data: {
           holdingId: dto.holdingId,
-          accountId: holding.accountId,
+          investmentId: holding.investmentId,
           userId,
           type: 'SELL',
           quantity: dto.quantity,
@@ -481,9 +476,9 @@ export class HoldingsService {
         },
       });
 
-      // 增加账户余额
-      await tx.account.update({
-        where: { id: holding.accountId },
+      // 增加投资账户余额
+      await tx.investment.update({
+        where: { id: holding.investmentId },
         data: { balance: { increment: netAmount } },
       });
 

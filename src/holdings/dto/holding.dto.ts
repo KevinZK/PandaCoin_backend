@@ -43,8 +43,8 @@ export const HoldingTransactionType = {
  */
 export class CreateHoldingDto {
   @IsString()
-  @IsNotEmpty({ message: '证券账户 ID 不能为空' })
-  accountId: string;
+  @IsNotEmpty({ message: '投资账户 ID 不能为空' })
+  investmentId: string;
 
   @IsString()
   @IsNotEmpty({ message: '资产名称不能为空' })
@@ -175,8 +175,8 @@ export class CreateHoldingTransactionDto {
  */
 export class BuyNewHoldingDto {
   @IsString()
-  @IsNotEmpty({ message: '证券账户 ID 不能为空' })
-  accountId: string;
+  @IsNotEmpty({ message: '投资账户 ID 不能为空' })
+  investmentId: string;
 
   @IsString()
   @IsNotEmpty({ message: '资产名称不能为空' })

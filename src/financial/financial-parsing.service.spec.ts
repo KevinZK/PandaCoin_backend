@@ -3,31 +3,34 @@ import { FinancialParsingService } from './financial-parsing.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoggerService } from '../common/logger/logger.service';
 import { RegionService } from '../common/region/region.service';
-import { AIServiceRouter } from './providers/ai-service.router';
+import { SkillExecutorService } from '../skills/skill-executor.service';
+import { SkillRouterService } from '../skills/skill-router.service';
 
 describe('FinancialParsingService', () => {
   let service: FinancialParsingService;
-  let mockProvider: any;
   let testUserId: string;
   let prisma: PrismaService;
+  let mockSkillExecutor: any;
 
   beforeAll(async () => {
-    mockProvider = {
-      name: 'MockProvider',
-      parse: jest.fn().mockResolvedValue({
-        events: [
-          {
-            event_type: 'TRANSACTION',
-            data: {
-              transaction_type: 'EXPENSE',
-              amount: 100,
-              currency: 'CNY',
-              category: '餐饮',
-              date: '2024-12-06',
-              description: '午餐',
+    mockSkillExecutor = {
+      execute: jest.fn().mockResolvedValue({
+        success: true,
+        response: {
+          events: [
+            {
+              event_type: 'TRANSACTION',
+              data: {
+                transaction_type: 'EXPENSE',
+                amount: 100,
+                currency: 'CNY',
+                category: 'FOOD',
+                date: '2024-12-06',
+                note: '午餐',
+              },
             },
-          },
-        ],
+          ],
+        },
       }),
     };
 
@@ -41,6 +44,7 @@ describe('FinancialParsingService', () => {
             log: jest.fn(),
             warn: jest.fn(),
             error: jest.fn(),
+            debug: jest.fn(),
           },
         },
         {
@@ -50,9 +54,13 @@ describe('FinancialParsingService', () => {
           },
         },
         {
-          provide: AIServiceRouter,
+          provide: SkillExecutorService,
+          useValue: mockSkillExecutor,
+        },
+        {
+          provide: SkillRouterService,
           useValue: {
-            getProviderChain: jest.fn().mockReturnValue([mockProvider]),
+            route: jest.fn(),
           },
         },
       ],
@@ -102,6 +110,17 @@ describe('FinancialParsingService', () => {
       expect(regionService.detectUserRegion).toHaveBeenCalled();
     });
 
+    it('应该调用 Skill 执行器', async () => {
+      await service.parseFinancialStatement('午餐花了50块', testUserId, {});
+
+      expect(mockSkillExecutor.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userMessage: '午餐花了50块',
+          skillName: 'accounting',
+        }),
+      );
+    });
+
     it('应该记录审计日志', async () => {
       await service.parseFinancialStatement('记录测试', testUserId, {});
 
@@ -113,62 +132,48 @@ describe('FinancialParsingService', () => {
 
       expect(logs.length).toBeGreaterThan(0);
       expect(logs[0].status).toBe('SUCCESS');
+      expect(logs[0].provider).toBe('SKILL_ACCOUNTING');
     });
 
-    it('所有Provider失败时应抛出异常', async () => {
-      const failingProvider = {
-        name: 'FailingProvider',
-        parse: jest.fn().mockRejectedValue(new Error('API Error')),
-      };
-
-      const aiRouter = (service as any).aiRouter;
-      aiRouter.getProviderChain = jest.fn().mockReturnValue([failingProvider]);
+    it('Skill 执行失败时应抛出异常', async () => {
+      mockSkillExecutor.execute = jest.fn().mockResolvedValue({
+        success: false,
+        error: 'Skill execution failed',
+      });
 
       await expect(
         service.parseFinancialStatement('测试', testUserId, {}),
-      ).rejects.toThrow('All AI providers failed');
+      ).rejects.toThrow('Skill execution failed');
+
+      // 恢复 mock
+      mockSkillExecutor.execute = jest.fn().mockResolvedValue({
+        success: true,
+        response: { events: [] },
+      });
     });
   });
 
-  describe('故障转移', () => {
-    it('应该在第一个Provider失败时尝试下一个', async () => {
-      const failingProvider = {
-        name: 'FailingProvider',
-        parse: jest.fn().mockRejectedValue(new Error('First failed')),
-      };
-
-      const successProvider = {
-        name: 'SuccessProvider',
-        parse: jest.fn().mockResolvedValue({
-          events: [
-            {
-              event_type: 'TRANSACTION',
-              data: {
-                transaction_type: 'INCOME',
-                amount: 500,
-                currency: 'CNY',
-                category: '工资',
-                date: '2024-12-06',
-              },
-            },
-          ],
-        }),
-      };
-
-      const aiRouter = (service as any).aiRouter;
-      aiRouter.getProviderChain = jest
-        .fn()
-        .mockReturnValue([failingProvider, successProvider]);
+  describe('查询类输入检测', () => {
+    it('应该检测账单分析查询', async () => {
+      mockSkillExecutor.execute = jest.fn().mockResolvedValue({
+        success: true,
+        response: {
+          summary: '本月消费统计',
+        },
+      });
 
       const result = await service.parseFinancialStatement(
-        '工资500',
+        '这个月花了多少钱',
         testUserId,
         {},
       );
 
-      expect(failingProvider.parse).toHaveBeenCalled();
-      expect(successProvider.parse).toHaveBeenCalled();
-      expect((result.events[0].data as any).amount).toBe(500);
+      expect(mockSkillExecutor.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skillName: 'bill-analysis',
+        }),
+      );
+      expect(result.events[0].event_type).toBe('QUERY_RESPONSE');
     });
   });
 });

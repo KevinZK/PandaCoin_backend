@@ -143,7 +143,7 @@ export class SkillsController {
         // 持仓
         this.prisma.holding.findMany({
           where: {
-            account: { userId },
+            userId,
           },
           select: {
             id: true,

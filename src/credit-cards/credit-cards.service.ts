@@ -8,18 +8,86 @@ export class CreditCardsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateCreditCardDto) {
-    return this.prisma.creditCard.create({
-      data: {
-        name: dto.name,
-        institutionName: dto.institutionName,
-        cardIdentifier: dto.cardIdentifier,
-        creditLimit: dto.creditLimit,
-        currentBalance: dto.currentBalance ?? 0,  // 待还金额，默认0
-        repaymentDueDate: dto.repaymentDueDate,
-        currency: dto.currency || 'CNY',
-        userId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // 1. 创建信用卡
+      const creditCard = await tx.creditCard.create({
+        data: {
+          name: dto.name,
+          institutionName: dto.institutionName,
+          cardIdentifier: dto.cardIdentifier,
+          creditLimit: dto.creditLimit,
+          currentBalance: dto.currentBalance ?? 0,  // 待还金额，默认0
+          repaymentDueDate: dto.repaymentDueDate,
+          currency: dto.currency || 'CNY',
+          userId,
+        },
+      });
+
+      // 2. 如果启用了自动扣款，创建 AutoPayment 配置
+      if (dto.autoRepayment && dto.repaymentDueDate) {
+        const repaymentDay = parseInt(dto.repaymentDueDate, 10);
+        if (!isNaN(repaymentDay) && repaymentDay >= 1 && repaymentDay <= 28) {
+          const paymentType = dto.repaymentType === 'MIN' ? 'CREDIT_CARD_MIN' : 'CREDIT_CARD_FULL';
+
+          // 查找扣款来源账户
+          let sourceAccountId = dto.sourceAccountId;
+          if (!sourceAccountId && dto.sourceAccountName) {
+            const sourceAccount = await tx.account.findFirst({
+              where: { userId, name: { contains: dto.sourceAccountName } },
+            });
+            sourceAccountId = sourceAccount?.id;
+          }
+
+          await tx.autoPayment.create({
+            data: {
+              name: `${dto.name}自动还款`,
+              paymentType,
+              creditCardId: creditCard.id,
+              dayOfMonth: repaymentDay,
+              executeTime: '08:00',
+              reminderDaysBefore: 2,
+              insufficientFundsPolicy: 'TRY_NEXT_SOURCE',
+              isEnabled: true,
+              nextExecuteAt: this.calculateNextExecuteTime(repaymentDay),
+              userId,
+              // 创建来源账户配置
+              sources: sourceAccountId
+                ? {
+                    create: {
+                      accountId: sourceAccountId,
+                      priority: 1,
+                    },
+                  }
+                : undefined,
+            },
+          });
+        }
+      }
+
+      return creditCard;
     });
+  }
+
+  /**
+   * 计算下次执行时间
+   */
+  private calculateNextExecuteTime(dayOfMonth: number, executeTime: string = '08:00'): Date {
+    const now = new Date();
+    const [hours, minutes] = executeTime.split(':').map(Number);
+
+    let next = new Date(now.getFullYear(), now.getMonth(), dayOfMonth, hours, minutes, 0, 0);
+
+    // 如果今天已经过了执行时间，计算下个月
+    if (next <= now) {
+      next.setMonth(next.getMonth() + 1);
+    }
+
+    // 处理月末日期问题（如 31 号在 2 月）
+    if (next.getDate() !== dayOfMonth) {
+      next.setDate(0); // 设为上月最后一天
+    }
+
+    return next;
   }
 
   async findAll(userId: string) {

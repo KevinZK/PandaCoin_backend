@@ -1,35 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoggerService } from '../common/logger/logger.service';
 import { RegionService, RegionCode } from '../common/region/region.service';
-import { AIServiceRouter } from './providers/ai-service.router';
-import { FinancialParsingProvider } from './providers/financial-parsing.provider.interface';
 import { FinancialEventsResponseDto } from './dtos/financial-events.dto';
 import { SkillExecutorService } from '../skills/skill-executor.service';
 import { SkillRouterService } from '../skills/skill-router.service';
 
 /**
  * 财务解析服务
- * 提供统一的财务语句解析入口，支持区域路由和故障转移
- * 支持两种模式：Skill 系统 或 传统 Provider
+ * 提供统一的财务语句解析入口
+ * 使用 Skill 系统 + Qwen3-Max 进行智能解析
  */
 @Injectable()
 export class FinancialParsingService {
-  private readonly useSkillSystem: boolean;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: LoggerService,
     private readonly regionService: RegionService,
-    private readonly aiRouter: AIServiceRouter,
     private readonly skillExecutor: SkillExecutorService,
     private readonly skillRouter: SkillRouterService,
-    private readonly configService: ConfigService,
   ) {
-    // 通过环境变量控制是否使用 Skill 系统，默认开启
-    this.useSkillSystem = this.configService.get<string>('USE_SKILL_SYSTEM', 'true') === 'true';
-    this.logger.log(`财务解析模式: ${this.useSkillSystem ? 'Skill 系统' : '传统 Provider'}`, 'FinancialParsingService');
+    this.logger.log('财务解析服务已启动（Skill 系统）', 'FinancialParsingService');
   }
 
   /**
@@ -48,117 +39,12 @@ export class FinancialParsingService {
     const startTime = Date.now();
     const currentDate = this.getCurrentDate();
 
-    // 检测用户区域
+    // 检测用户区域（用于审计日志）
     const region = await this.regionService.detectUserRegion(userId, headers);
     this.logger.log(
-      `Parsing financial statement for user ${userId}, region: ${region}, mode: ${this.useSkillSystem ? 'Skill' : 'Provider'}`,
+      `Parsing financial statement for user ${userId}, region: ${region}`,
       'FinancialParsingService',
     );
-
-    // 使用 Skill 系统
-    if (this.useSkillSystem) {
-      return this.parseWithSkillSystem(text, userId, region, currentDate, conversationHistory);
-    }
-
-    // 使用传统 Provider 链
-    const providerChain = this.aiRouter.getProviderChain(region);
-
-    // 遍历 Provider 链，尝试解析
-    for (const provider of providerChain) {
-      const providerStartTime = Date.now();
-
-      try {
-        const result = await this.withTimeout(
-          provider.parse(text, currentDate),
-          8000,
-        );
-
-        const duration = Date.now() - providerStartTime;
-
-        // 记录成功日志
-        await this.logAudit(
-          userId,
-          region,
-          provider.name,
-          'SUCCESS',
-          duration,
-          null,
-        );
-
-        this.logger.log(
-          `Successfully parsed with ${provider.name} in ${duration}ms`,
-          'FinancialParsingService',
-        );
-
-        return result;
-      } catch (error) {
-        const duration = Date.now() - providerStartTime;
-
-        // 记录失败日志
-        await this.logAudit(
-          userId,
-          region,
-          provider.name,
-          'FAILURE',
-          duration,
-          error.message,
-        );
-
-        this.logger.warn(
-          `Provider ${provider.name} failed: ${error.message}`,
-          'FinancialParsingService',
-        );
-
-        // 继续尝试下一个 Provider
-      }
-    }
-
-    // 所有 Provider 都失败
-    const totalDuration = Date.now() - startTime;
-    this.logger.error(
-      `All providers failed after ${totalDuration}ms`,
-      undefined,
-      'FinancialParsingService',
-    );
-
-    throw new Error('All AI providers failed to parse the financial statement');
-  }
-
-  /**
-   * 检测是否为查询类输入（而非记账输入）
-   */
-  private isQueryInput(text: string): { isQuery: boolean; skillName?: string } {
-    const queryPatterns = [
-      // 账单分析查询
-      { pattern: /(花了多少|消费了多少|消费情况|账单|统计|分析|这个月.*花|上个月.*花)/, skill: 'bill-analysis' },
-      // 预算查询
-      { pattern: /(预算.*(剩|多少|还有|够不够)|超支|还能花)/, skill: 'budget-advisor' },
-      // 投资查询
-      { pattern: /(股票|基金|持仓|收益|投资.*(怎么样|如何))/, skill: 'investment' },
-      // 贷款查询
-      { pattern: /(贷款|还款|负债|欠款).*(多少|还有|还要|怎么样)/, skill: 'loan-advisor' },
-    ];
-
-    for (const { pattern, skill } of queryPatterns) {
-      if (pattern.test(text)) {
-        return { isQuery: true, skillName: skill };
-      }
-    }
-
-    return { isQuery: false };
-  }
-
-  /**
-   * 使用 Skill 系统解析财务语句
-   */
-  private async parseWithSkillSystem(
-    text: string,
-    userId: string,
-    region: RegionCode,
-    currentDate: string,
-    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
-  ): Promise<FinancialEventsResponseDto> {
-    const startTime = Date.now();
 
     // 检测是否为查询类输入
     const queryCheck = this.isQueryInput(text);
@@ -170,22 +56,41 @@ export class FinancialParsingService {
       return this.handleQueryWithSkill(text, userId, queryCheck.skillName, currentDate);
     }
 
+    // 使用 Skill 系统解析
     try {
+      // 获取用户账户列表（用于账户验证，排除软删除）
+      const [accounts, creditCards] = await Promise.all([
+        this.prisma.account.findMany({
+          where: { userId, deletedAt: null },
+          select: { id: true, name: true, type: true },
+        }),
+        this.prisma.creditCard.findMany({
+          where: { userId, deletedAt: null },
+          select: { id: true, name: true, cardIdentifier: true },
+        }),
+      ]);
+
+      // 构建账户列表供 AI 验证
+      const userAccounts = [
+        ...accounts.map(a => ({ name: a.name, type: a.type })),
+        ...creditCards.map(c => ({ name: c.name, type: 'CREDIT_CARD', identifier: c.cardIdentifier })),
+      ];
+
       const result = await this.skillExecutor.execute({
         userMessage: text,
-        skillName: 'accounting',  // 指定使用记账技能
+        skillName: 'accounting',
         context: {
           userId,
           currentDate,
           daysInMonth: new Date(currentDate.slice(0, 7) + '-01').getDate(),
-          conversationHistory,  // 传递对话历史用于多轮追问
+          conversationHistory,
+          accounts: userAccounts,  // 传递账户列表供 AI 验证
         },
       });
 
       const duration = Date.now() - startTime;
 
       if (result.success && result.response) {
-        // 记录成功日志
         await this.logAudit(userId, region, 'SKILL_ACCOUNTING', 'SUCCESS', duration, null);
 
         this.logger.log(
@@ -193,11 +98,9 @@ export class FinancialParsingService {
           'FinancialParsingService',
         );
 
-        // 转换 Skill 响应为 FinancialEventsResponseDto 格式
         return this.convertSkillResponseToEvents(result.response, currentDate);
       }
 
-      // Skill 执行失败
       await this.logAudit(userId, region, 'SKILL_ACCOUNTING', 'FAILURE', duration, result.error || 'Unknown error');
       throw new Error(result.error || 'Skill execution failed');
     } catch (error) {
@@ -212,6 +115,26 @@ export class FinancialParsingService {
   }
 
   /**
+   * 检测是否为查询类输入（而非记账输入）
+   */
+  private isQueryInput(text: string): { isQuery: boolean; skillName?: string } {
+    const queryPatterns = [
+      { pattern: /(花了多少|消费了多少|消费情况|账单|统计|分析|这个月.*花|上个月.*花)/, skill: 'bill-analysis' },
+      { pattern: /(预算.*(剩|多少|还有|够不够)|超支|还能花)/, skill: 'budget-advisor' },
+      { pattern: /(股票|基金|持仓|收益|投资.*(怎么样|如何))/, skill: 'investment' },
+      { pattern: /(贷款|还款|负债|欠款).*(多少|还有|还要|怎么样)/, skill: 'loan-advisor' },
+    ];
+
+    for (const { pattern, skill } of queryPatterns) {
+      if (pattern.test(text)) {
+        return { isQuery: true, skillName: skill };
+      }
+    }
+
+    return { isQuery: false };
+  }
+
+  /**
    * 处理查询类输入，返回分析结果
    */
   private async handleQueryWithSkill(
@@ -220,7 +143,6 @@ export class FinancialParsingService {
     skillName: string,
     currentDate: string,
   ): Promise<FinancialEventsResponseDto> {
-    // 构建完整的上下文（包含用户数据）
     const context = await this.buildQueryContext(userId, currentDate);
 
     const result = await this.skillExecutor.execute({
@@ -230,7 +152,6 @@ export class FinancialParsingService {
     });
 
     if (result.success && result.response) {
-      // 将分析结果包装为 QUERY_RESPONSE 事件
       return {
         events: [
           {
@@ -245,7 +166,6 @@ export class FinancialParsingService {
       } as FinancialEventsResponseDto;
     }
 
-    // 查询失败，返回错误
     return {
       events: [
         {
@@ -289,12 +209,11 @@ export class FinancialParsingService {
         select: { id: true, category: true, amount: true, month: true, isRecurring: true },
       }),
       this.prisma.holding.findMany({
-        where: { account: { userId } },
+        where: { userId },
         select: { id: true, tickerCode: true, name: true, quantity: true, avgCostPrice: true, currentPrice: true },
       }),
     ]);
 
-    // 计算分类消费统计
     const categoryStats = records.reduce((acc: any, r: any) => {
       if (r.type === 'EXPENSE') {
         const cat = r.category || '其他';
@@ -332,9 +251,7 @@ export class FinancialParsingService {
   ): FinancialEventsResponseDto {
     // 如果已经是 events 格式，直接返回
     if (skillResponse.events && Array.isArray(skillResponse.events)) {
-      // 检查是否有 NEED_MORE_INFO 类型需要特殊处理
       const events = skillResponse.events.map((event: any) => {
-        // 保留原有的事件类型，不做转换
         if (['TRANSACTION', 'ASSET_UPDATE', 'CREDIT_CARD_UPDATE', 'HOLDING_UPDATE', 'BUDGET', 'AUTO_PAYMENT', 'NEED_MORE_INFO', 'NULL_STATEMENT'].includes(event.event_type)) {
           return event;
         }
@@ -346,13 +263,11 @@ export class FinancialParsingService {
     // 转换旧格式（success/data）为新格式（events）
     if (skillResponse.success !== undefined && skillResponse.data) {
       const data = skillResponse.data;
-      
-      // 检查是否是资产/负债类型
+
       if (data.asset_type || this.isAssetDeclaration(data)) {
         return this.convertToAssetUpdate(data, currentDate);
       }
-      
-      // 映射分类
+
       const categoryMap: Record<string, string> = {
         '餐饮': 'FOOD',
         '交通': 'TRANSPORT',
@@ -380,7 +295,6 @@ export class FinancialParsingService {
         '其他收入': 'INCOME_OTHER',
       };
 
-      // 映射交易类型
       const transactionTypeMap: Record<string, string> = {
         'EXPENSE': 'EXPENSE',
         'INCOME': 'INCOME',
@@ -408,7 +322,6 @@ export class FinancialParsingService {
       };
     }
 
-    // 无法解析，返回空事件
     this.logger.warn('无法转换 Skill 响应格式', 'FinancialParsingService');
     return { events: [] };
   }
@@ -426,7 +339,6 @@ export class FinancialParsingService {
    * 转换为 ASSET_UPDATE 事件
    */
   private convertToAssetUpdate(data: any, currentDate: string): FinancialEventsResponseDto {
-    // 映射资产类型
     const assetTypeMap: Record<string, string> = {
       '车贷': 'LOAN',
       '房贷': 'MORTGAGE',
@@ -440,7 +352,6 @@ export class FinancialParsingService {
     let assetType = data.asset_type || 'OTHER_LIABILITY';
     let name = data.name || note;
 
-    // 根据关键词推断资产类型
     for (const [keyword, type] of Object.entries(assetTypeMap)) {
       if (note.includes(keyword)) {
         assetType = type;
@@ -468,27 +379,6 @@ export class FinancialParsingService {
         },
       ],
     };
-  }
-
-  /**
-   * 带超时的 Promise 包装器
-   */
-  private withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(`Request timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-
-      promise
-        .then((result) => {
-          clearTimeout(timer);
-          resolve(result);
-        })
-        .catch((error) => {
-          clearTimeout(timer);
-          reject(error);
-        });
-    });
   }
 
   /**

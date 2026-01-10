@@ -10,7 +10,8 @@ import { LoggerService } from '../common/logger/logger.service';
 @Injectable()
 export class SkillLoaderService implements OnModuleInit {
   private skills: Map<SkillType, SkillDefinition> = new Map();
-  private readonly skillsDir = path.join(__dirname);
+  // 编译后 __dirname 指向 dist/src/skills/，SKILL.md 在 dist/skills/
+  private readonly skillsDir = path.join(__dirname, '../../skills');
 
   constructor(private logger: LoggerService) {}
 

@@ -245,10 +245,14 @@ ${examples}
       this.logger.debug('🔧 使用 Function Calling 模式', 'SkillExecutor');
 
       // 构建消息列表，包含对话历史
+      const accountsList = context.accounts && context.accounts.length > 0
+        ? context.accounts.map((a: any) => `- ${a.name} (${a.type})`).join('\n')
+        : '（用户暂无账户）';
+
       const messages: Array<{ role: string; content: string }> = [
         {
           role: 'system',
-          content: `${FUNCTION_CALLING_SYSTEM_PROMPT}\n\n当前日期: ${context.currentDate}\n用户账户: ${JSON.stringify(context.accounts || [])}`,
+          content: `${FUNCTION_CALLING_SYSTEM_PROMPT}\n\n---\n\n## 当前上下文\n\n当前日期: ${context.currentDate}\n\n### 【用户账户列表】\n${accountsList}`,
         },
       ];
 
@@ -289,7 +293,16 @@ ${examples}
 
       // 检查是否有 tool_calls
       if (message?.tool_calls && message.tool_calls.length > 0) {
-        const events = this.convertToolCallsToEvents(message.tool_calls, context.currentDate);
+        let events = this.convertToolCallsToEvents(message.tool_calls, context.currentDate);
+        
+        this.logger.debug(`转换后的事件: ${JSON.stringify(events)}`, 'SkillExecutor');
+        this.logger.debug(`用户账户列表: ${JSON.stringify(context.accounts)}`, 'SkillExecutor');
+        
+        // 后处理：验证用户指定的账户是否存在
+        events = this.validateAccountsInEvents(events, context.accounts || []);
+        
+        this.logger.debug(`验证后的事件: ${JSON.stringify(events)}`, 'SkillExecutor');
+        
         return {
           response: events,
           confidence: 0.9,
@@ -476,6 +489,124 @@ ${examples}
     }
 
     return { events };
+  }
+
+  /**
+   * 验证事件中用户指定的账户是否存在
+   * 如果用户明确指定了账户（如"微信支付"）但账户不存在，转换为 NEED_MORE_INFO
+   */
+  private validateAccountsInEvents(
+    result: { events: any[] },
+    userAccounts: Array<{ name: string; type: string }>,
+  ): { events: any[] } {
+    const validatedEvents: any[] = [];
+
+    for (const event of result.events) {
+      if (event.event_type === 'TRANSACTION' && event.data?.source_account) {
+        const specifiedAccount = event.data.source_account;
+        
+        // 检查用户是否有匹配的账户
+        const accountExists = this.findMatchingAccount(specifiedAccount, userAccounts);
+        
+        if (!accountExists) {
+          // 账户不存在，转换为 NEED_MORE_INFO
+          this.logger.debug(`账户验证: "${specifiedAccount}" 不存在于用户账户列表`, 'SkillExecutor');
+          
+          // 检查用户是否有任何可选账户
+          const hasAnyAccounts = userAccounts.length > 0;
+          
+          if (hasAnyAccounts) {
+            // 有其他账户可选，显示选择器
+            validatedEvents.push({
+              event_type: 'NEED_MORE_INFO',
+              data: {
+                original_intent: 'TRANSACTION',
+                question: `您还没有添加「${specifiedAccount}」账户哦～您可以说「我的${specifiedAccount}有xxx元」来添加，或者从下方选择其他账户`,
+                missing_fields: ['source_account'],
+                picker_type: event.data.transaction_type === 'INCOME' ? 'INCOME_ACCOUNT' : 'EXPENSE_ACCOUNT',
+                partial_data: {
+                  transaction_type: event.data.transaction_type,
+                  amount: event.data.amount,
+                  currency: event.data.currency,
+                  category: event.data.category,
+                  note: event.data.note,
+                  date: event.data.date,
+                },
+              },
+            });
+          } else {
+            // 没有任何账户，提示用户先创建账户，不显示选择器
+            validatedEvents.push({
+              event_type: 'NEED_MORE_INFO',
+              data: {
+                original_intent: 'TRANSACTION',
+                question: `您还没有添加任何账户哦～请先说「我的${specifiedAccount}有xxx元」来添加账户，然后再记账`,
+                missing_fields: ['source_account'],
+                picker_type: 'TEXT_INPUT', // 使用文本输入而非选择器
+                partial_data: {
+                  transaction_type: event.data.transaction_type,
+                  amount: event.data.amount,
+                  currency: event.data.currency,
+                  category: event.data.category,
+                  note: event.data.note,
+                  date: event.data.date,
+                },
+              },
+            });
+          }
+          continue;
+        }
+      }
+      
+      validatedEvents.push(event);
+    }
+
+    return { events: validatedEvents };
+  }
+
+  /**
+   * 模糊匹配账户名称
+   */
+  private findMatchingAccount(
+    specifiedName: string,
+    userAccounts: Array<{ name: string; type: string }>,
+  ): boolean {
+    if (!specifiedName || userAccounts.length === 0) return false;
+
+    const normalized = specifiedName.toLowerCase().replace(/支付|钱包|账户|卡/g, '');
+    
+    // 常见别名映射
+    const aliasMap: Record<string, string[]> = {
+      '微信': ['微信', 'wechat', 'weixin'],
+      '支付宝': ['支付宝', 'alipay', 'zhifubao'],
+      '招商': ['招商', '招行', 'cmb'],
+      '工商': ['工商', '工行', 'icbc'],
+      '建设': ['建设', '建行', 'ccb'],
+      '农业': ['农业', '农行', 'abc'],
+      '中国银行': ['中国银行', '中行', 'boc'],
+      '交通': ['交通', '交行', 'bocom'],
+      '花呗': ['花呗', 'huabei'],
+    };
+
+    for (const account of userAccounts) {
+      const accountName = account.name.toLowerCase();
+      
+      // 直接包含匹配
+      if (accountName.includes(normalized) || normalized.includes(accountName.replace(/支付|钱包|账户|卡/g, ''))) {
+        return true;
+      }
+      
+      // 别名匹配
+      for (const [key, aliases] of Object.entries(aliasMap)) {
+        if (aliases.some(a => normalized.includes(a))) {
+          if (aliases.some(a => accountName.includes(a))) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 
   /**

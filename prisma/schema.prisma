@@ -46,6 +46,7 @@ model User {
   autoPayments AutoPayment[]
   autoIncomes AutoIncome[]
   subscription Subscription?
+  investments Investment[] // 投资账户
   holdings    Holding[]
   holdingTransactions HoldingTransaction[]
 
@@ -119,7 +120,6 @@ model Account {
   autoPaymentsAsTarget AutoPayment[] @relation("PaymentTarget") // 作为还款目标
   autoPaymentSources AutoPaymentSource[] @relation("AutoPaymentSources") // 作为自动扣款来源
   autoIncomes    AutoIncome[] @relation("IncomeTarget") // 作为自动入账目标
-  holdings       Holding[] // 证券账户下的持仓
 
   @@index([userId])
   @@map("accounts")
@@ -127,9 +127,8 @@ model Account {
 
 // 账户类型常量 (SQLite不支持enum,使用String)
 // BANK = 银行卡
-// INVESTMENT = 投资账户
 // CASH = 现金
-// CREDIT_CARD = 信用卡
+// CREDIT_CARD = 信用卡 (已有独立模型 CreditCard)
 // DIGITAL_WALLET = 电子钱包
 // LOAN = 贷款
 // MORTGAGE = 房贷
@@ -140,6 +139,7 @@ model Account {
 // VEHICLE = 车辆
 // OTHER_ASSET = 其他资产
 // OTHER_LIABILITY = 其他负债
+// 注: INVESTMENT 已迁移为独立模型 Investment
 
 // =============================================
 // 记账记录模型
@@ -239,22 +239,25 @@ model Budget {
 }
 
 // =============================================
-// 投资持仓模型 (已废弃，使用 Holding 替代)
+// 投资账户模型 (如: 富途证券、老虎证券、Coinbase)
 // =============================================
 model Investment {
-  id            String   @id @default(uuid())
-  name          String   // 投资标的名称,如:茅台股票、比特币
-  type          String   // STOCK, FUND, CRYPTO
-  code          String?  // 股票代码/基金代码
-  costPrice     Float  @map("cost_price") // 成本价
-  currentPrice  Float? @map("current_price") // 当前价格(用户手动更新)
-  quantity      Float  // 持仓数量
-  userId        String   @map("user_id")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(uuid())
+  name            String   // 账户名称: "富途证券", "老虎证券"
+  type            String   // 账户类型: STOCK, FUND, CRYPTO, MIXED
+  institutionName String?  @map("institution_name") // 券商/平台名称
+  accountNumber   String?  @map("account_number")   // 账户号/标识
+  currency        String   @default("USD")
+  balance         Float    @default(0) // 现金余额
+  userId          String   @map("user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at") // 软删除
 
-  // 关联记录
-  records       Record[]
+  // 关联关系
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holdings        Holding[] // 账户下的持仓
+  records         Record[]
 
   @@index([userId])
   @@map("investments")
@@ -281,7 +284,7 @@ model Investment {
 
 model Holding {
   id                String   @id @default(uuid())
-  accountId         String   @map("account_id")      // 归属的证券账户
+  investmentId      String   @map("investment_id")   // 归属的投资账户
   userId            String   @map("user_id")
 
   // 资产标识
@@ -315,15 +318,16 @@ model Holding {
   currency          String   @default("USD")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at") // 软删除时间
 
   // 关系
-  account           Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  investment        Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions      HoldingTransaction[]
   priceHistory      PriceHistory[]
 
-  @@unique([accountId, tickerCode])
-  @@index([accountId])
+  @@unique([investmentId, tickerCode])
+  @@index([investmentId])
   @@index([userId])
   @@index([tickerCode])
   @@map("holdings")
@@ -418,7 +422,7 @@ model PriceUpdateLog {
 model HoldingTransaction {
   id              String   @id @default(uuid())
   holdingId       String   @map("holding_id")
-  accountId       String   @map("account_id")        // 冗余，方便查询
+  investmentId    String   @map("investment_id")     // 冗余，方便查询
   userId          String   @map("user_id")
 
   type            String                             // BUY, SELL, DIVIDEND, TRANSFER_IN, TRANSFER_OUT
@@ -442,7 +446,7 @@ model HoldingTransaction {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([holdingId])
-  @@index([accountId, date])
+  @@index([investmentId, date])
   @@index([userId, date])
   @@map("holding_transactions")
 }
@@ -531,6 +535,7 @@ model CreditCard {
   userId           String   @map("user_id")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at") // 软删除时间
 
   // 关联关系
   user         User @relation(fields: [userId], references: [id], onDelete: Cascade)

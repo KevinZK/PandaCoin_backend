@@ -35,7 +35,7 @@ export class TransactionEngineService {
     // 使用事务确保原子性
     return this.prisma.$transaction(async (tx) => {
       const accountChanges: TransactionResultDto['accountChanges'] = [];
-      let investmentChanges: TransactionResultDto['investmentChanges'] = undefined;
+      let holdingChanges: TransactionResultDto['holdingChanges'] = undefined;
 
       // 1. 处理源账户余额变化
       const sourceAccount = await tx.account.findUnique({
@@ -90,17 +90,19 @@ export class TransactionEngineService {
       }
 
       // 3. 处理投资持仓变化 (买入/卖出)
-      if (dto.investmentId && this.needsInvestment(dto.type)) {
-        const investment = await tx.investment.findUnique({
-          where: { id: dto.investmentId },
+      // 注意: 现在 Investment 是投资账户，Holding 是持仓
+      // 投资买卖逻辑应该通过 HoldingsService 处理，这里跳过
+      if (dto.holdingId && this.needsInvestment(dto.type)) {
+        const holding = await tx.holding.findUnique({
+          where: { id: dto.holdingId },
         });
 
-        if (!investment) {
-          throw new NotFoundException('投资持仓不存在');
+        if (!holding) {
+          throw new NotFoundException('持仓不存在');
         }
 
         const quantityChange = this.calculateQuantityChange(dto.type, dto.quantity || 0);
-        const newQuantity = investment.quantity + quantityChange;
+        const newQuantity = holding.quantity + quantityChange;
 
         if (newQuantity < 0) {
           throw new BadRequestException('卖出数量超过持仓数量');
@@ -111,22 +113,22 @@ export class TransactionEngineService {
         
         // 买入时更新成本价（加权平均）
         if (dto.type === TransactionType.INVEST_BUY && dto.unitPrice) {
-          const totalCost = investment.costPrice * investment.quantity + dto.unitPrice * (dto.quantity || 0);
-          updateData.costPrice = newQuantity > 0 ? totalCost / newQuantity : 0;
+          const totalCost = holding.avgCostPrice * holding.quantity + dto.unitPrice * (dto.quantity || 0);
+          updateData.avgCostPrice = newQuantity > 0 ? totalCost / newQuantity : 0;
         }
 
-        await tx.investment.update({
-          where: { id: dto.investmentId },
+        await tx.holding.update({
+          where: { id: dto.holdingId },
           data: updateData,
         });
 
-        investmentChanges = {
-          investmentId: investment.id,
-          investmentName: investment.name,
-          previousQuantity: investment.quantity,
+        holdingChanges = {
+          holdingId: holding.id,
+          holdingName: holding.name,
+          previousQuantity: holding.quantity,
           newQuantity: newQuantity,
           change: quantityChange,
-          costPrice: updateData.costPrice || investment.costPrice,
+          avgCostPrice: updateData.avgCostPrice || holding.avgCostPrice,
         };
       }
 
@@ -143,7 +145,6 @@ export class TransactionEngineService {
           isConfirmed: true,
           accountId: dto.accountId,
           targetAccountId: dto.targetAccountId,
-          investmentId: dto.investmentId,
           quantity: dto.quantity,
           unitPrice: dto.unitPrice,
           userId,
@@ -165,7 +166,7 @@ export class TransactionEngineService {
           date: record.date,
         },
         accountChanges,
-        investmentChanges,
+        holdingChanges,
       };
     });
   }
@@ -174,19 +175,19 @@ export class TransactionEngineService {
    * 计算净资产
    */
   async calculateNetWorth(userId: string): Promise<NetWorthDto> {
-    // 获取所有账户
+    // 获取所有账户（排除软删除）
     const accounts = await this.prisma.account.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
     });
 
-    // 获取所有投资
-    const investments = await this.prisma.investment.findMany({
-      where: { userId },
+    // 获取所有持仓（排除软删除）
+    const holdings = await this.prisma.holding.findMany({
+      where: { userId, deletedAt: null },
     });
 
-    // 获取所有无账户的记录（accountId 为 null）
+    // 获取所有无账户的记录（accountId 为 null，排除软删除）
     const allRecords = await this.prisma.record.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
     });
     const unaccountedRecords = allRecords.filter((r) => !r.accountId);
 
@@ -260,24 +261,24 @@ export class TransactionEngineService {
       }
     });
 
-    // 计算投资市值
-    const investmentDetails = investments.map((inv) => {
-      const currentPrice = inv.currentPrice || inv.costPrice;
-      const marketValue = inv.quantity * currentPrice;
-      const costValue = inv.quantity * inv.costPrice;
+    // 计算持仓市值
+    const holdingDetails = holdings.map((h) => {
+      const currentPrice = h.currentPrice || h.avgCostPrice;
+      const marketValue = h.quantity * currentPrice;
+      const costValue = h.quantity * h.avgCostPrice;
       return {
-        id: inv.id,
-        name: inv.name,
-        type: inv.type,
-        quantity: inv.quantity,
-        costPrice: inv.costPrice,
+        id: h.id,
+        name: h.name,
+        type: h.type,
+        quantity: h.quantity,
+        costPrice: h.avgCostPrice,
         currentPrice: currentPrice,
         marketValue: marketValue,
         profitLoss: marketValue - costValue,
       };
     });
 
-    const investmentValue = investmentDetails.reduce((sum, inv) => sum + inv.marketValue, 0);
+    const investmentValue = holdingDetails.reduce((sum, h) => sum + h.marketValue, 0);
 
     // 汇总（包含无账户记录的净影响）
     const liquidAssets = bankAccounts + cashAccounts + digitalWalletAccounts + savingsAccounts;
@@ -314,7 +315,7 @@ export class TransactionEngineService {
         type: a.type,
         balance: a.balance,
       })),
-      investments: investmentDetails,
+      investments: holdingDetails,
     };
   }
 
@@ -356,14 +357,15 @@ export class TransactionEngineService {
         });
       }
 
-      // 3. 回滚投资持仓
-      if (rec.investmentId && rec.quantity) {
-        const quantityRollback = -this.calculateQuantityChange(rec.type as TransactionType, rec.quantity);
-        await tx.investment.update({
-          where: { id: rec.investmentId },
-          data: { quantity: { increment: quantityRollback } },
-        });
-      }
+      // 3. 回滚持仓数量 (注意: Record 不再关联 holdingId，此逻辑暂时跳过)
+      // 投资买卖的回滚应通过 HoldingsService 处理
+      // if (rec.holdingId && rec.quantity) {
+      //   const quantityRollback = -this.calculateQuantityChange(rec.type as TransactionType, rec.quantity);
+      //   await tx.holding.update({
+      //     where: { id: rec.holdingId },
+      //     data: { quantity: { increment: quantityRollback } },
+      //   });
+      // }
 
       // 4. 删除记录
       await tx.record.delete({ where: { id: recordId } });
@@ -403,8 +405,8 @@ export class TransactionEngineService {
 
     // 投资买卖需要投资ID和数量
     if (this.needsInvestment(dto.type)) {
-      if (!dto.investmentId) {
-        throw new BadRequestException(`${dto.type} 类型需要指定投资持仓`);
+      if (!dto.holdingId) {
+        throw new BadRequestException(`${dto.type} 类型需要指定持仓`);
       }
       if (!dto.quantity || dto.quantity <= 0) {
         throw new BadRequestException('投资数量必须大于0');

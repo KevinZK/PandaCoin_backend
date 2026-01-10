@@ -83,13 +83,13 @@ export class HoldingsController {
   /**
    * 获取指定账户下的持仓
    */
-  @Get('account/:accountId')
-  async findByAccount(
+  @Get('investment/:investmentId')
+  async findByInvestment(
     @CurrentUser() user: any,
-    @Param('accountId') accountId: string,
+    @Param('investmentId') investmentId: string,
   ) {
-    const result = await this.holdingsService.findByAccount(user.id, accountId);
-    return ResponseDto.success(result, '获取账户持仓成功');
+    const result = await this.holdingsService.findByInvestment(user.id, investmentId);
+    return ResponseDto.success(result, '获取投资账户持仓成功');
   }
 
   /**

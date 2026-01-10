@@ -30,7 +30,7 @@ export class CreateTransactionDto {
 
   @IsOptional()
   @IsUUID()
-  investmentId?: string;  // 投资持仓ID (投资买卖时必填)
+  holdingId?: string;  // 持仓ID (投资买卖时必填)
 
   @IsOptional()
   @IsNumber()
@@ -81,13 +81,13 @@ export class TransactionResultDto {
     change: number;
   }[];
 
-  investmentChanges?: {
-    investmentId: string;
-    investmentName: string;
+  holdingChanges?: {
+    holdingId: string;
+    holdingName: string;
     previousQuantity: number;
     newQuantity: number;
     change: number;
-    costPrice?: number;
+    avgCostPrice?: number;
   };
 }
 

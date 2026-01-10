@@ -229,9 +229,6 @@ export class AccountsService {
         type: { not: 'CREDIT_CARD' },
         deletedAt: null, // 只计算未删除的账户
       },
-      include: {
-        holdings: true, // 包含持仓
-      },
     });
 
     // 获取信用卡数据
