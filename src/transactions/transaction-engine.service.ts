@@ -180,6 +180,11 @@ export class TransactionEngineService {
       where: { userId, deletedAt: null },
     });
 
+    // 获取所有投资账户（排除软删除）
+    const investments = await this.prisma.investment.findMany({
+      where: { userId, deletedAt: null },
+    });
+
     // 获取所有持仓（排除软删除）
     const holdings = await this.prisma.holding.findMany({
       where: { userId, deletedAt: null },
@@ -261,6 +266,9 @@ export class TransactionEngineService {
       }
     });
 
+    // 计算投资账户现金余额
+    const investmentCashBalance = investments.reduce((sum, inv) => sum + inv.balance, 0);
+
     // 计算持仓市值
     const holdingDetails = holdings.map((h) => {
       const currentPrice = h.currentPrice || h.avgCostPrice;
@@ -278,7 +286,9 @@ export class TransactionEngineService {
       };
     });
 
-    const investmentValue = holdingDetails.reduce((sum, h) => sum + h.marketValue, 0);
+    const holdingsMarketValue = holdingDetails.reduce((sum, h) => sum + h.marketValue, 0);
+    // 投资总价值 = 持仓市值 + 投资账户现金余额
+    const investmentValue = holdingsMarketValue + investmentCashBalance;
 
     // 汇总（包含无账户记录的净影响）
     const liquidAssets = bankAccounts + cashAccounts + digitalWalletAccounts + savingsAccounts;
@@ -314,6 +324,12 @@ export class TransactionEngineService {
         name: a.name,
         type: a.type,
         balance: a.balance,
+      })),
+      investmentAccounts: investments.map((inv) => ({
+        id: inv.id,
+        name: inv.name,
+        type: inv.type,
+        cashBalance: inv.balance,
       })),
       investments: holdingDetails,
     };

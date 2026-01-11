@@ -123,6 +123,13 @@ export class NetWorthDto {
     balance: number;
   }[];
 
+  investmentAccounts?: {
+    id: string;
+    name: string;
+    type: string;
+    cashBalance: number;
+  }[];
+
   investments: {
     id: string;
     name: string;

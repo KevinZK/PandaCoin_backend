@@ -121,8 +121,8 @@ export class HoldingsService {
         },
       });
 
-      // 5. 扣减账户余额
-      await tx.account.update({
+      // 5. 扣减投资账户余额
+      await tx.investment.update({
         where: { id: dto.investmentId },
         data: { balance: { decrement: totalCost } },
       });
@@ -191,7 +191,7 @@ export class HoldingsService {
    */
   async findAll(userId: string) {
     return this.prisma.holding.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       include: {
         investment: {
           select: { id: true, name: true, type: true, balance: true },
@@ -215,7 +215,7 @@ export class HoldingsService {
     }
 
     const holdings = await this.prisma.holding.findMany({
-      where: { investmentId, userId },
+      where: { investmentId, userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -252,7 +252,7 @@ export class HoldingsService {
    */
   async findOne(id: string, userId: string) {
     const holding = await this.prisma.holding.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       include: {
         investment: {
           select: { id: true, name: true, type: true },
@@ -288,7 +288,7 @@ export class HoldingsService {
   async update(id: string, userId: string, dto: UpdateHoldingDto) {
     // 获取当前持仓数据
     const currentHolding = await this.prisma.holding.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
     });
 
     if (!currentHolding) {
@@ -351,7 +351,7 @@ export class HoldingsService {
     return this.prisma.$transaction(async (tx) => {
       // 获取持仓
       const holding = await tx.holding.findFirst({
-        where: { id: dto.holdingId, userId },
+        where: { id: dto.holdingId, userId, deletedAt: null },
       });
 
       if (!holding) {
@@ -359,8 +359,8 @@ export class HoldingsService {
       }
 
       // 获取投资账户
-      const investment = await tx.investment.findUnique({
-        where: { id: holding.investmentId },
+      const investment = await tx.investment.findFirst({
+        where: { id: holding.investmentId, deletedAt: null },
       });
 
       if (!investment) {
@@ -429,7 +429,7 @@ export class HoldingsService {
     return this.prisma.$transaction(async (tx) => {
       // 获取持仓
       const holding = await tx.holding.findFirst({
-        where: { id: dto.holdingId, userId },
+        where: { id: dto.holdingId, userId, deletedAt: null },
       });
 
       if (!holding) {
@@ -542,7 +542,7 @@ export class HoldingsService {
    */
   async getTotalHoldingsValue(userId: string) {
     const holdings = await this.prisma.holding.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
     });
 
     let totalMarketValue = 0;
